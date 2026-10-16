@@ -1,0 +1,50 @@
+
+# Python virtual environment
+.venv/
+venv/
+
+# Private configuration
+.env
+.env.*
+
+# Python temporary files
+__pycache__/
+*.pyc
+
+# Editor files
+.vscode/
+verified_silpa_id_local.txt
+petpilot247_appointments_dev.db
+petpilot247_appointments_dev.db-journal
+petpilot247_appointments_dev.db-wal
+petpilot247_appointments_dev.db-shm
+verified_ambily_id_local.txt
+
+# All local SQLite databases and associated files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.key
+*private*.pem
+
+# Local development artifacts
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.vscode/
+
+# Local staff verification records
+verified_*_local.txt
+
+# Local archives
+*.zip

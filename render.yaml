@@ -1,0 +1,34 @@
+
+services:
+  - type: web
+    name: petpilot247-smart-scheduling
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn production_app:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /health
+    autoDeployTrigger: "off"
+
+    disk:
+      name: petpilot247-appointments
+      mountPath: /var/data
+      sizeGB: 5
+
+    envVars:
+      - key: PETPILOT_ENV
+        value: production
+
+      - key: PETPILOT_LIVE_BOOKING_ENABLED
+        value: "false"
+
+      - key: PETPILOT_CALENDAR_VERIFICATION_ENABLED
+        value: "false"
+
+      - key: GOOGLE_MAPS_API_ENABLED
+        value: "false"
+
+      - key: PETPILOT_DATABASE_PATH
+        value: /var/data/petpilot247_appointments.db
+
+      - key: GHL_LOCATION_ID
+        sync: false
