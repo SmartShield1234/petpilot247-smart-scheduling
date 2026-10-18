@@ -125,6 +125,13 @@ after_drive_minutes=(
 
         recommendations.append(result)
 
+    recommendations_summary = "; ".join(
+        f"{item['groomer_id']}: "
+        f"{'Available' if item['available'] else 'Unavailable'}"
+        for item in recommendations
+    )
+
+
     return {
 
         "mode": "simulation_only",
@@ -133,5 +140,6 @@ after_drive_minutes=(
         "appointment_sync_verified": False,
         "requested_start": start.isoformat(),
         "recommendations": recommendations,
+        "recommendations_summary": recommendations_summary,
 
     }
