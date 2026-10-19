@@ -23,7 +23,9 @@ def health():
         "live_booking": False,
         "appointment_sync_verified": False,
     }
-    @app.post("/recommend-groomer")
+
+
+@app.post("/recommend-groomer")
 async def recommend_groomer(request: GroomerRecommendationRequest):
     api_key = os.getenv("GOOGLE_MAPS_API_KEY")
 
