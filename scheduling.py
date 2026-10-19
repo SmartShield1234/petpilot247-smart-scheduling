@@ -744,3 +744,41 @@ def evaluate_safe_groomer_booking(
         "available": True,
         "reason": "Booking and neighbor travel checks passed"
     }
+
+async def evaluate_groomer_with_google_routes(
+    groomer_id,
+    requested_start,
+    service_minutes,
+    appointments,
+    new_customer_address,
+    api_key,
+    post_buffer_minutes=15,
+):
+    travel = await get_neighbor_travel_times(
+        groomer_id=groomer_id,
+        requested_start=requested_start,
+        service_minutes=service_minutes,
+        appointments=appointments,
+        new_customer_address=new_customer_address,
+        api_key=api_key,
+    )
+
+    booking = evaluate_safe_groomer_booking(
+        groomer_id=groomer_id,
+        requested_start=requested_start,
+        service_minutes=service_minutes,
+        appointments=appointments,
+        before_drive_minutes=travel["before_drive_minutes"],
+        after_drive_minutes=travel["after_drive_minutes"],
+        post_buffer_minutes=post_buffer_minutes,
+    )
+
+    return {
+        **booking,
+        "before_drive_minutes": travel["before_drive_minutes"],
+        "after_drive_minutes": travel["after_drive_minutes"],
+        "before_distance_meters": travel["before_distance_meters"],
+        "after_distance_meters": travel["after_distance_meters"],
+        "previous_appointment": travel["neighbors"]["previous_appointment"],
+        "next_appointment": travel["neighbors"]["next_appointment"],
+    }
