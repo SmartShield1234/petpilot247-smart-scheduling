@@ -1,6 +1,11 @@
 
 from datetime import datetime, timedelta
 
+from maps_service import (
+    get_driving_minutes,
+    validate_route_addresses,
+    MapsServiceError,
+)
 
 def check_appointment_slot(
     previous_end: datetime,
@@ -281,9 +286,6 @@ def rank_appointment_slots(
 
 
 
-from datetime import datetime, timedelta
-
-
 def check_travel_gap(
     previous_end: datetime,
     proposed_start: datetime,
@@ -420,17 +422,14 @@ def evaluate_groomer_candidates(
         })
 
     return results
-
-
-
+    
 def find_neighboring_appointments(
     groomer_id,
     requested_start,
     service_minutes,
     appointments
 ):
-    from datetime import datetime, timedelta
-
+   
     if requested_start.tzinfo is None:
         raise ValueError("Timezone-aware start required")
 
@@ -470,7 +469,6 @@ def find_neighboring_appointments(
                     "address_source": appointment.get("address_source")
                 }
 
-
         elif start >= proposed_end:
             if (
                 next_appointment is None
@@ -505,7 +503,70 @@ def find_neighboring_appointments(
         "next_appointment": next_appointment
     }
 
+async def get_neighbor_travel_times(
+    groomer_id,
+    requested_start,
+    service_minutes,
+    appointments,
+    new_customer_address,
+    api_key,
+):
+    neighbors = find_neighboring_appointments(
+        groomer_id=groomer_id,
+        requested_start=requested_start,
+        service_minutes=service_minutes,
+        appointments=appointments,
+    )
 
+    before_drive_minutes = None
+    after_drive_minutes = None
+    before_distance_meters = None
+    after_distance_meters = None
+
+    previous = neighbors["previous_appointment"]
+    following = neighbors["next_appointment"]
+
+    if previous:
+        previous_address = previous.get("customer_address")
+
+        addresses = validate_route_addresses(
+            previous_address,
+            new_customer_address,
+        )
+
+        route = await get_driving_minutes(
+            addresses["origin"],
+            addresses["destination"],
+            api_key,
+        )
+
+        before_drive_minutes = route["driving_minutes"]
+        before_distance_meters = route["distance_meters"]
+
+    if following:
+        next_address = following.get("customer_address")
+
+        addresses = validate_route_addresses(
+            new_customer_address,
+            next_address,
+        )
+
+        route = await get_driving_minutes(
+            addresses["origin"],
+            addresses["destination"],
+            api_key,
+        )
+
+        after_drive_minutes = route["driving_minutes"]
+        after_distance_meters = route["distance_meters"]
+
+    return {
+        "before_drive_minutes": before_drive_minutes,
+        "after_drive_minutes": after_drive_minutes,
+        "before_distance_meters": before_distance_meters,
+        "after_distance_meters": after_distance_meters,
+        "neighbors": neighbors,
+    }
 
 
 def validate_neighbor_travel_data(
