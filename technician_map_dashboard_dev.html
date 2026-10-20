@@ -1,0 +1,584 @@
+<!-- PetPilot247 Technician Map Dashboard | GHL Custom HTML | DEMO DATA ONLY -->
+<div id="pp247-map-dashboard" class="pp247">
+  <div class="pp247-shell">
+    <header class="pp247-head">
+      <div><div class="pp247-eyebrow">PETPILOT247 / OPERATIONS</div><h1>Technician Map Dashboard</h1><p>Appointments, service locations, and technician assignments in one place.</p></div>
+      <div class="pp247-head-actions"><span class="pp247-demo"><span class="pp247-dot"></span> SAMPLE DATA</span><button type="button" id="pp247-refresh">Reset view</button></div>
+    </header>
+    <section class="pp247-stats" aria-label="Overview">
+      <div class="pp247-stat"><span>Appointments shown</span><strong id="pp247-count">0</strong><small>Filtered schedule</small></div>
+      <div class="pp247-stat"><span>Assigned technicians</span><strong id="pp247-tech-count">0</strong><small>In filtered appointments</small></div>
+      <div class="pp247-stat"><span>Driving time</span><strong>—</strong><small>Awaiting Maps API</small></div>
+      <div class="pp247-stat"><span>Scheduling integration</span><strong class="pp247-pending">Pending</strong><small>Awaiting scheduling endpoint</small></div>
+    </section>
+    <div class="pp247-toolbar">
+      <label class="pp247-search">Search <input id="pp247-search" type="search" placeholder="Service, stop, or technician" autocomplete="off"></label>
+      <label>Technician <select id="pp247-technician"><option value="all">All technicians</option></select></label>
+      <label>Status <select id="pp247-status"><option value="all">All statuses</option><option value="Scheduled">Scheduled</option><option value="Confirmed">Confirmed</option></select></label>
+    </div>
+    
+<section id="pp247-scheduling-panel" class="pp247-scheduling-panel" aria-label="Smart Scheduling">
+  <h2>Smart Scheduling Engine</h2>
+  <p>Check groomer availability, appointment conflicts, and driving time.</p>
+
+<div class="pp247-scheduling-controls">
+  <label for="pp247-requested-start">
+    Requested appointment
+    <input
+      id="pp247-requested-start"
+      type="datetime-local"
+    >
+  </label>
+
+  <label for="pp247-service-minutes">
+    Service duration
+    <select id="pp247-service-minutes">
+      <option value="30">30 minutes</option>
+      <option value="60">60 minutes</option>
+      <option value="90" selected>90 minutes</option>
+      <option value="120">120 minutes</option>
+    </select>
+  </label>
+
+<label for="pp247-customer-address">
+  Customer service address
+  <input
+    id="pp247-customer-address"
+    type="text"
+    placeholder="Enter customer service address"
+    autocomplete="street-address"
+  >
+</label>
+
+<label for="pp247-address-confirmed">
+  <input
+    id="pp247-address-confirmed"
+    type="checkbox"
+  >
+  Service address confirmed
+</label>
+
+  <button
+    id="pp247-check-availability"
+    type="button"
+    disabled
+  >
+    Check Groomer Availability
+  </button>
+</div>
+
+  <div id="pp247-scheduling-results">
+    <strong>Development mode</strong>
+    <p>Scheduling recommendations are not connected yet.</p>
+  </div>
+</section>
+
+    <div class="pp247-layout">
+      <section class="pp247-map-panel" aria-label="Appointment map">
+        <div class="pp247-map-top"><div><strong>Service area overview</strong><small>Philadelphia, PA · illustrative customer stops</small></div><span id="pp247-map-indicator" role="status">Map loading...</span></div>
+        <div id="pp247-map" role="region" aria-label="Map of fictional grooming appointment locations"></div>
+        <div class="pp247-map-foot">Map © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a> · Demo map tiles; use approved production mapping infrastructure later.</div>
+      </section>
+      <aside class="pp247-list-panel" aria-label="Appointment list">
+        <div class="pp247-list-head"><div><strong>Upcoming stops</strong><small id="pp247-result-label">Sample appointments</small></div><span class="pp247-list-icon">↗</span></div>
+        <div id="pp247-appointments" class="pp247-appointments"></div>
+      </aside>
+    </div>
+    <footer class="pp247-bottom"><span>🔒 Demo only. No GHL records or credentials are loaded.</span><span>GHL API: <b>Not connected</b> · Routes API: <b>Not connected</b></span></footer>
+  </div>
+</div>
+<style>
+  #pp247-map-dashboard{--ppnavy:#102540;--ppblue:#206bd9;--ppink:#71829a;--ppborder:#e0e8f1;--ppbg:#f4f7fb;--ppteal:#087e70;color:var(--ppnavy);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;line-height:1.5;width:100%;max-width:100%;box-sizing:border-box}
+  #pp247-map-dashboard *,#pp247-map-dashboard *::before,#pp247-map-dashboard *::after{box-sizing:border-box}
+  #pp247-map-dashboard .pp247-shell{width:100%;max-width:1480px;margin:0 auto;padding:28px 22px 40px;background:var(--ppbg);border-radius:20px}
+  #pp247-map-dashboard .pp247-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:24px}
+  #pp247-map-dashboard .pp247-eyebrow{color:var(--ppblue);font-size:11px;letter-spacing:.18em;font-weight:800}
+  #pp247-map-dashboard h1{font-size:clamp(23px,3vw,32px);line-height:1.22;margin:8px 0;color:var(--ppnavy);font-weight:800}
+  #pp247-map-dashboard p{color:#687993;font-size:14px;margin:0}
+  #pp247-map-dashboard .pp247-head-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  #pp247-map-dashboard .pp247-demo{border-radius:99px;color:#855407;background:#fff1cd;font-weight:800;font-size:11px;letter-spacing:.07em;padding:9px 12px;white-space:nowrap}
+  #pp247-map-dashboard .pp247-dot{background:#e5a100;width:7px;height:7px;display:inline-block;border-radius:50%;margin-right:6px}
+  #pp247-map-dashboard button{cursor:pointer;border:1px solid var(--ppborder);background:#fff;color:var(--ppnavy);border-radius:9px;font:inherit;font-size:13px;font-weight:700;padding:9px 13px}
+  #pp247-map-dashboard button:hover{border-color:var(--ppblue);color:var(--ppblue)}
+  #pp247-map-dashboard .pp247-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px;margin-bottom:17px}
+  #pp247-map-dashboard .pp247-stat{background:#fff;border:1px solid var(--ppborder);border-radius:13px;padding:16px 18px;display:flex;flex-direction:column;gap:2px}
+  #pp247-map-dashboard .pp247-stat span{font-size:12px;color:var(--ppink);font-weight:650}
+  #pp247-map-dashboard .pp247-stat strong{font-size:29px;line-height:1.35;color:var(--ppnavy)}
+  #pp247-map-dashboard .pp247-stat strong.pp247-pending{font-size:20px;color:#a0670b;padding-top:7px;padding-bottom:6px}
+  #pp247-map-dashboard .pp247-stat small{font-size:11px;color:#8390a3}
+  #pp247-map-dashboard .pp247-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:#fff;border:1px solid var(--ppborder);padding:13px;border-radius:13px;margin-bottom:16px}
+  #pp247-map-dashboard .pp247-toolbar label{font-size:11px;font-weight:800;color:#61738c;display:flex;flex-direction:column;gap:5px;min-width:160px}
+  #pp247-map-dashboard .pp247-toolbar label.pp247-search{flex:1;min-width:230px}
+  #pp247-map-dashboard input,#pp247-map-dashboard select{font:inherit;font-size:13px;color:var(--ppnavy);width:100%;padding:10px 12px;border:1px solid #dce5ef;background:#fff;border-radius:9px;min-height:42px;outline-offset:2px}
+  #pp247-map-dashboard input:focus,#pp247-map-dashboard select:focus{outline:2px solid #81aff6;border-color:var(--ppblue)}
+  #pp247-map-dashboard .pp247-layout{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(295px,1fr);gap:16px;align-items:stretch}
+  #pp247-map-dashboard .pp247-map-panel,#pp247-map-dashboard .pp247-list-panel{background:#fff;border:1px solid var(--ppborder);border-radius:14px;overflow:hidden;min-width:0}
+  #pp247-map-dashboard .pp247-map-top,#pp247-map-dashboard .pp247-list-head{display:flex;justify-content:space-between;align-items:center;padding:17px 19px;gap:12px;border-bottom:1px solid var(--ppborder)}
+  #pp247-map-dashboard .pp247-map-top strong,#pp247-map-dashboard .pp247-list-head strong{font-size:15px;display:block}
+  #pp247-map-dashboard .pp247-map-top small,#pp247-map-dashboard .pp247-list-head small{display:block;color:#7c8ca1;font-size:11px;margin-top:3px}
+  #pp247-map-dashboard #pp247-map-indicator{font-size:11px;color:var(--ppteal);background:#eaf9f4;border-radius:40px;padding:6px 9px;white-space:nowrap}
+  #pp247-map-dashboard #pp247-map{height:500px;width:100%;min-width:0;background:#eaf0f5;position:relative;overflow:hidden;z-index:0}
+  #pp247-map-dashboard .pp247-map-foot{padding:9px 15px;font-size:10px;color:#7f8fa3}
+  #pp247-map-dashboard .pp247-map-foot a{color:#206bd9}
+  #pp247-map-dashboard .pp247-list-icon{color:#a3b3c5;font-weight:700;font-size:20px}
+  #pp247-map-dashboard .pp247-appointments{max-height:533px;overflow-y:auto}
+  #pp247-map-dashboard .pp247-item{width:100%;text-align:left;border:0;border-radius:0;border-bottom:1px solid #eef2f7;padding:17px 19px;display:block;transition:background .15s}
+  #pp247-map-dashboard .pp247-item:last-child{border-bottom:0}
+  #pp247-map-dashboard .pp247-item:hover,#pp247-map-dashboard .pp247-item:focus{background:#f0f6ff;color:var(--ppnavy)}
+  #pp247-map-dashboard .pp247-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  #pp247-map-dashboard .pp247-item-name{font-size:14px;font-weight:800;color:var(--ppnavy)}
+  #pp247-map-dashboard .pp247-pill{font-size:10px;white-space:nowrap;border-radius:30px;padding:4px 8px;background:#edf4ff;color:#1f63bc;font-weight:800}
+  #pp247-map-dashboard .pp247-pill.confirmed{background:#e9f7f1;color:#087e70}
+  #pp247-map-dashboard .pp247-service{font-size:12px;color:#64768b;margin-top:5px}
+  #pp247-map-dashboard .pp247-meta{font-size:11px;color:#8493a6;margin-top:9px}
+  #pp247-map-dashboard .pp247-empty{padding:36px 20px;text-align:center;color:#65778d;font-size:13px}
+  #pp247-map-dashboard .pp247-bottom{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:11px;color:#70839b;padding:16px 2px 0}
+  #pp247-map-dashboard .pp247-bottom b{font-weight:700;color:#9e6916}
+  /* Critical fix: GHL/global image rules must not resize Leaflet's 256px map tiles. */
+  #pp247-map-dashboard .leaflet-container img,#pp247-map-dashboard img.leaflet-tile,#pp247-map-dashboard .leaflet-pane img{max-width:none!important;max-height:none!important;width:auto;height:auto}
+  #pp247-map-dashboard .leaflet-container .leaflet-tile{width:256px!important;height:256px!important;max-width:none!important;max-height:none!important}
+  #pp247-map-dashboard .leaflet-container{font-family:Inter,Arial,sans-serif}
+  #pp247-map-dashboard .pp247-marker{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:3px solid #fff;border-radius:50%;background:#206bd9;color:#fff;font-size:11px;font-weight:800;box-shadow:0 3px 10px #20395855}
+  @media(max-width:900px){#pp247-map-dashboard .pp247-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#pp247-map-dashboard .pp247-layout{grid-template-columns:minmax(0,1fr)}#pp247-map-dashboard #pp247-map{height:410px}#pp247-map-dashboard .pp247-appointments{max-height:360px}}
+  @media(max-width:560px){#pp247-map-dashboard .pp247-shell{padding:17px 12px}#pp247-map-dashboard .pp247-head{flex-direction:column}#pp247-map-dashboard .pp247-stat{padding:13px}#pp247-map-dashboard .pp247-stat strong{font-size:23px}#pp247-map-dashboard .pp247-toolbar label,#pp247-map-dashboard .pp247-toolbar label.pp247-search{min-width:100%;flex:1}#pp247-map-dashboard #pp247-map{height:345px}#pp247-map-dashboard .pp247-map-top{align-items:flex-start;flex-wrap:wrap}}
+  /* PetPilot247 - Leaflet tile display compatibility */
+
+#pp247-map-dashboard .leaflet-container {
+  position: relative;
+  overflow: hidden;
+  background: #eaf0f5;
+}
+
+#pp247-map-dashboard .leaflet-tile-pane img,
+#pp247-map-dashboard img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+  width: 256px !important;
+  height: 256px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  object-fit: fill !important;
+}
+
+#pp247-map-dashboard .leaflet-map-pane,
+#pp247-map-dashboard .leaflet-tile-pane {
+  transform-origin: 0 0;
+}
+
+/* PetPilot247 Smart Scheduling Panel */
+#pp247-map-dashboard .pp247-scheduling-panel {
+    background: #ffffff;
+    border: 1px solid #dce5f0;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 4px 16px rgba(20, 45, 85, 0.05);
+}
+
+#pp247-map-dashboard .pp247-scheduling-panel h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #142e50;
+    margin: 0 0 8px;
+}
+
+#pp247-map-dashboard .pp247-scheduling-panel p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 12px;
+}
+
+#pp247-map-dashboard #pp247-scheduling-results {
+    background: #f3f7fc;
+    border: 1px solid #dce5f0;
+    border-radius: 8px;
+    padding: 14px;
+}
+
+#pp247-map-dashboard #pp247-scheduling-results strong {
+    color: #142e50;
+}
+
+/* Smart Scheduling input controls */
+#pp247-map-dashboard .pp247-scheduling-controls {
+    display: flex;
+    align-items: end;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+#pp247-map-dashboard .pp247-scheduling-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    flex: 1 1 220px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #142e50;
+}
+
+#pp247-map-dashboard .pp247-scheduling-controls input,
+#pp247-map-dashboard .pp247-scheduling-controls select {
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    border: 1px solid #dce5f0;
+    border-radius: 8px;
+    background: #fff;
+    color: #142e50;
+    box-sizing: border-box;
+}
+
+#pp247-map-dashboard #pp247-check-availability {
+    min-height: 44px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 8px;
+    background: #2059b5;
+    color: #fff;
+    font-weight: 700;
+}
+
+#pp247-map-dashboard #pp247-check-availability:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.8;
+}
+
+/* Smart Scheduling recommendation cards */
+#pp247-map-dashboard .pp247-recommendation-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    border: 1px solid #dce5f0;
+    border-radius: 8px;
+    padding: 12px 15px;
+    margin-top: 10px;
+}
+
+#pp247-map-dashboard .pp247-recommendation-card strong {
+    font-size: 14px;
+    font-weight: 700;
+    color: #142e50;
+    text-transform: capitalize;
+}
+
+#pp247-map-dashboard .pp247-rec-available {
+    background: #e7f7ee;
+    color: #167445;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#pp247-map-dashboard .pp247-rec-unavailable {
+    background: #fce8e8;
+    color: #a52727;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#pp247-map-dashboard .pp247-recommendation-card {
+    flex-wrap: wrap;
+}
+
+#pp247-map-dashboard .pp247-recommendation-reason {
+    display: block;
+    flex-basis: 100%;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #64748b;
+}
+
+</style>
+<script>
+(function(){
+  'use strict';
+  const root=document.getElementById('pp247-map-dashboard');
+  if(!root||root.dataset.initialized==='true')return;
+  root.dataset.initialized='true';
+  const byId=id=>root.querySelector('#'+id);
+  
+  // PetPilot247 Smart Scheduling integration
+  // Development mode: retain fictional appointments.
+  // Real GHL data must only be accessed through an
+  // authenticated, staff-authorized backend.
+
+  const PP247_SCHEDULING_CONFIG = {
+    mode: 'development',
+    useLiveAppointments: false,
+    enableAutomaticBooking: false
+  };
+
+  // Local Smart Scheduling integration — simulation only
+  const availabilityButton = byId('pp247-check-availability');
+  const schedulingResults = byId('pp247-scheduling-results');
+
+  if (availabilityButton && schedulingResults) {
+    availabilityButton.disabled = false;
+
+    availabilityButton.addEventListener('click', async () => {
+      const requestedStart = byId('pp247-requested-start').value;
+      const serviceMinutes = Number(byId('pp247-service-minutes').value);
+
+      if (!requestedStart) {
+        schedulingResults.textContent =
+          'Please select an appointment date and time.';
+        return;
+      }
+
+
+      // Interpret the selected time in PetPilot247's New York timezone.
+      // Detect daylight-saving changes and reject invalid local times.
+      function toNewYorkISOString(localValue) {
+        const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(localValue);
+        if (!match) throw new Error('Invalid appointment date.');
+
+        const [, y, mo, d, h, mi] = match;
+        const wanted = `${y}-${mo}-${d} ${h}:${mi}`;
+
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: 'America/New_York',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        });
+
+        const parts = date => Object.fromEntries(
+          formatter.formatToParts(date)
+            .filter(p => p.type !== 'literal')
+            .map(p => [p.type, p.value])
+        );
+
+        const base = Date.UTC(+y, +mo - 1, +d, +h, +mi);
+        const matches = [];
+
+        for (let offset = -5; offset <= -4; offset++) {
+          const candidate = new Date(base - offset * 3600000);
+          const p = parts(candidate);
+          const formatted =
+            `${p.year}-${p.month}-${p.day} ${p.hour}:${p.minute}`;
+
+          if (formatted === wanted) matches.push(candidate);
+        }
+
+        if (matches.length !== 1) {
+          throw new Error('Invalid or ambiguous New York appointment time.');
+        }
+
+        return matches[0].toISOString();
+      }
+
+      let requestedStartISO;
+
+      try {
+        requestedStartISO = toNewYorkISOString(requestedStart);
+      } catch (error) {
+        schedulingResults.textContent = error.message;
+        return;
+      }
+
+
+      availabilityButton.disabled = true;
+      schedulingResults.textContent = 'Checking simulated groomer availability...';
+
+      try {
+        const response = await fetch('/dev/check-availability', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            requested_start: requestedStartISO,
+            service_minutes: serviceMinutes
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Scheduling API returned HTTP ' + response.status);
+        }
+
+        const data = await response.json();
+
+        if (
+          data.mode !== 'simulation_only' ||
+          data.booking_authorized !== false
+        ) {
+          throw new Error('Unexpected scheduling mode');
+        }
+
+        
+        // Render simulated recommendations as readable cards.
+        // Do not place groomers on the map without verified coordinates.
+        schedulingResults.replaceChildren();
+
+        const heading = document.createElement('strong');
+        heading.textContent = 'SIMULATION ONLY — Groomer Recommendations';
+        schedulingResults.appendChild(heading);
+
+        const recommendations = Array.isArray(data.recommendations)
+          ? data.recommendations
+          : [];
+
+        if (!recommendations.length) {
+          const empty = document.createElement('p');
+          empty.textContent = 'No simulated recommendations returned.';
+          schedulingResults.appendChild(empty);
+        }
+
+        recommendations.forEach((item) => {
+          const card = document.createElement('div');
+          card.className = 'pp247-recommendation-card';
+
+          const name = document.createElement('strong');
+          name.textContent = String(item.groomer_id || 'Unknown groomer');
+
+          const status = document.createElement('span');
+          status.textContent = item.available ? 'Available' : 'Unavailable';
+          status.className = item.available
+            ? 'pp247-rec-available'
+            : 'pp247-rec-unavailable';
+
+          
+          card.append(name, status);
+
+          // Explain scheduling eligibility using the API response.
+          if (typeof item.reason === 'string' && item.reason.trim()) {
+            const explanation = document.createElement('small');
+            explanation.className = 'pp247-recommendation-reason';
+            explanation.textContent = item.reason;
+            card.appendChild(explanation);
+          }
+
+          schedulingResults.appendChild(card);
+        });
+
+
+      } catch (error) {
+        schedulingResults.textContent =
+          'Scheduling check failed: ' + error.message;
+      } finally {
+        availabilityButton.disabled = false;
+      }
+    });
+  }
+
+  const sample=[
+    {id:'DEMO-001',stop:'Center City demo stop',service:'Full Groom',technician:'Groomer A',time:'9:00 AM',status:'Confirmed',lat:39.9526,lng:-75.1636},
+    {id:'DEMO-002',stop:'Fairmount demo stop',service:'Bath & Brush',technician:'Groomer A',time:'11:15 AM',status:'Scheduled',lat:39.9679,lng:-75.1720},
+    {id:'DEMO-003',stop:'University City demo stop',service:'Nail Trim',technician:'Groomer B',time:'10:30 AM',status:'Confirmed',lat:39.9522,lng:-75.1932},
+    {id:'DEMO-004',stop:'South Philadelphia demo stop',service:'Mobile Grooming',technician:'Groomer B',time:'2:00 PM',status:'Scheduled',lat:39.9286,lng:-75.1698},
+    {id:'DEMO-005',stop:'Fishtown demo stop',service:'Full Groom',technician:'Groomer C',time:'1:30 PM',status:'Scheduled',lat:39.9730,lng:-75.1328}
+  ];
+  const techSelect=byId('pp247-technician');
+  [...new Set(sample.map(x=>x.technician))].sort().forEach(name=>{
+    const option=document.createElement('option');option.value=name;option.textContent=name;techSelect.appendChild(option);
+  });
+  
+let map=null,
+    layer=null,
+    recommendationLayer=null,
+    markers=new Map(),
+    resizeObserver=null,
+    mutationObserver=null;
+
+  const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function filtered(){
+    const q=byId('pp247-search').value.trim().toLowerCase(),tech=techSelect.value,status=byId('pp247-status').value;
+    return sample.filter(a=>(tech==='all'||a.technician===tech)&&(status==='all'||a.status===status)&&(!q||[a.stop,a.service,a.technician,a.id].some(v=>v.toLowerCase().includes(q))));
+  }
+  function render(){
+    const rows=filtered();
+    byId('pp247-count').textContent=rows.length;
+    byId('pp247-tech-count').textContent=new Set(rows.map(x=>x.technician)).size;
+    byId('pp247-result-label').textContent=rows.length+' sample appointment'+(rows.length===1?'':'s');
+    const holder=byId('pp247-appointments');holder.innerHTML='';markers.clear();if(layer)layer.clearLayers();
+    if(!rows.length){
+      const empty=document.createElement('div');empty.className='pp247-empty';empty.textContent='No sample appointments match your filters.';holder.appendChild(empty);
+      if(map)map.setView([39.9526,-75.1636],12,{animate:false});return;
+    }
+    rows.forEach((a,i)=>{
+      const btn=document.createElement('button');btn.type='button';btn.className='pp247-item';
+      btn.innerHTML='<div class="pp247-item-top"><span class="pp247-item-name">'+escapeHTML(a.stop)+'</span><span class="pp247-pill '+(a.status==='Confirmed'?'confirmed':'')+'">'+escapeHTML(a.status)+'</span></div><div class="pp247-service">'+escapeHTML(a.service)+'</div><div class="pp247-meta">'+escapeHTML(a.time)+' · '+escapeHTML(a.technician)+' · '+escapeHTML(a.id)+'</div>';
+      btn.addEventListener('click',()=>{if(map&&markers.has(a.id)){refreshMapSize();map.setView([a.lat,a.lng],14,{animate:false});markers.get(a.id).openPopup();}});
+      holder.appendChild(btn);
+      if(map&&layer){
+        const icon=window.L.divIcon({className:'',html:'<div class="pp247-marker">'+(i+1)+'</div>',iconSize:[30,30],iconAnchor:[15,15]});
+        const marker=window.L.marker([a.lat,a.lng],{icon}).bindPopup('<strong>'+escapeHTML(a.stop)+'</strong><div>'+escapeHTML(a.service)+'</div><div>'+escapeHTML(a.time)+' · '+escapeHTML(a.technician)+'</div>');
+        marker.addTo(layer);markers.set(a.id,marker);
+      }
+    });
+    if(map&&layer){const bounds=window.L.latLngBounds(rows.map(a=>[a.lat,a.lng]));map.fitBounds(bounds.pad(.25),{maxZoom:13,animate:false});}
+  }
+  ['pp247-search','pp247-technician','pp247-status'].forEach(id=>byId(id).addEventListener(id==='pp247-search'?'input':'change',render));
+  byId('pp247-refresh').addEventListener('click',()=>{
+    byId('pp247-search').value='';techSelect.value='all';byId('pp247-status').value='all';render();refreshMapSize();
+  });
+  function refreshMapSize(){
+    if(!map||!root.isConnected)return;
+    const target=byId('pp247-map');
+    if(!target||target.getBoundingClientRect().width<1)return;
+    map.invalidateSize({pan:false,animate:false});
+  }
+  function initMap(){
+    if(map)return;
+    if(!window.L){
+      byId('pp247-map-indicator').textContent='Map unavailable';
+      byId('pp247-map').textContent='Map library did not load. Check GHL embedding and external script access.';render();return;
+    }
+    const target=byId('pp247-map');
+    map=window.L.map(target,{scrollWheelZoom:false,preferCanvas:true}).setView([39.9526,-75.1636],12);
+    const tiles=window.L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,attribution:'© OpenStreetMap contributors',crossOrigin:true
+    }).addTo(map);
+    tiles.on('tileerror',()=>{byId('pp247-map-indicator').textContent='Map tiles blocked or unavailable';});
+    tiles.on('load',()=>{byId('pp247-map-indicator').textContent='Map ready · Demo';});
+    layer=window.L.layerGroup().addTo(map);
+    
+    // Separate layer reserved for simulated scheduling recommendations.
+    // No groomer locations are available yet, so do not add markers.
+    recommendationLayer = window.L.layerGroup().addTo(map);
+
+    render();
+    [100,300,700,1400,2500].forEach(delay=>setTimeout(refreshMapSize,delay));
+    if('ResizeObserver'in window){
+      resizeObserver=new ResizeObserver(()=>requestAnimationFrame(refreshMapSize));
+      resizeObserver.observe(target);
+      resizeObserver.observe(root);
+    }
+    window.addEventListener('resize',refreshMapSize,{passive:true});
+    window.addEventListener('orientationchange',()=>setTimeout(refreshMapSize,250),{passive:true});
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(refreshMapSize,100);});
+    if('MutationObserver'in window){
+      mutationObserver=new MutationObserver(()=>{if(target.getBoundingClientRect().width>0)refreshMapSize();});
+      mutationObserver.observe(root,{attributes:true,attributeFilter:['style','class']});
+    }
+  }
+  function loadLeaflet(){
+    if(window.L){initMap();return;}
+    if(!document.querySelector('link[data-pp247-leaflet]')){
+      const link=document.createElement('link');link.rel='stylesheet';link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      link.integrity='sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoouqu3NZrczM=';link.crossOrigin='anonymous';link.dataset.pp247Leaflet='true';document.head.appendChild(link);
+    }
+    if(!window.__pp247LeafletLoading){
+      window.__pp247LeafletLoading=new Promise((resolve,reject)=>{
+        const s=document.createElement('script');s.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        s.integrity='sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';s.crossOrigin='anonymous';s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
+      });
+    }
+    window.__pp247LeafletLoading.then(initMap).catch(()=>initMap());
+  }
+  render();loadLeaflet();
+})();
+</script>
