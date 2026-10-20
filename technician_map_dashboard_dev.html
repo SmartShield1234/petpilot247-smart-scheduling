@@ -394,16 +394,36 @@
       schedulingResults.textContent = 'Checking simulated groomer availability...';
 
       try {
-        const response = await fetch('/dev/check-availability', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            requested_start: requestedStartISO,
-            service_minutes: serviceMinutes
-          })
-        });
+       const response = await fetch('/recommend-groomer', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+        groomer_id: 'ambily',
+        requested_start: requestedStartISO,
+        service_minutes: serviceMinutes,
+        new_customer_address: '1700 Market Street, Philadelphia, PA 19103',
+        appointments: [
+            {
+                appointment_id: 'SIM-PREV-001',
+                groomer_id: 'ambily',
+                start_time: '2026-10-20T10:00:00-04:00',
+                end_time: '2026-10-20T11:30:00-04:00',
+                customer_address: '1500 Market Street, Philadelphia, PA 19102',
+                address_source: 'simulation'
+            },
+            {
+                appointment_id: 'SIM-NEXT-001',
+                groomer_id: 'ambily',
+                start_time: '2026-10-20T15:30:00-04:00',
+                end_time: '2026-10-20T17:00:00-04:00',
+                customer_address: '2000 Market Street, Philadelphia, PA 19103',
+                address_source: 'simulation'
+            }
+        ]
+    })
+});
 
         if (!response.ok) {
           throw new Error('Scheduling API returned HTTP ' + response.status);
