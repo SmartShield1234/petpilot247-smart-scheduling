@@ -447,9 +447,9 @@
         heading.textContent = 'SIMULATION ONLY — Groomer Recommendations';
         schedulingResults.appendChild(heading);
 
-        const recommendations = Array.isArray(data.recommendations)
-          ? data.recommendations
-          : [];
+       const recommendations = data.recommendation
+    ? [data.recommendation]
+    : [];
 
         if (!recommendations.length) {
           const empty = document.createElement('p');
