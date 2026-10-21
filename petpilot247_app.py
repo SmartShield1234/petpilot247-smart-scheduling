@@ -1,3 +1,6 @@
+from fastapi.responses import FileResponse
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
@@ -6,6 +9,10 @@ from scheduling import evaluate_groomer_with_google_routes
 from maps_service import MapsServiceError
 
 app = FastAPI(title="PetPilot247 Cloud Preview")
+
+DASHBOARD_FILE = Path(__file__).with_name(
+    "technician_map_dashboard_dev.html"
+)
 
 class GroomerRecommendationRequest(BaseModel):
     groomer_id: str
@@ -24,7 +31,10 @@ def health():
         "appointment_sync_verified": False,
     }
 
-
+@app.get("/technician-map")
+def technician_map():
+    return FileResponse(DASHBOARD_FILE)
+    
 @app.post("/recommend-groomer")
 async def recommend_groomer(request: GroomerRecommendationRequest):
     api_key = os.getenv("GOOGLE_MAPS_API_KEY")
