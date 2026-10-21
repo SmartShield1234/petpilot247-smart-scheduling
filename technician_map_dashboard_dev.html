@@ -431,12 +431,9 @@
 
         const data = await response.json();
 
-        if (
-          data.mode !== 'simulation_only' ||
-          data.booking_authorized !== false
-        ) {
-          throw new Error('Unexpected scheduling mode');
-        }
+        if (data.status !== 'OK' || !data.recommendation) {
+    throw new Error('Unexpected scheduling response');
+}
 
         
         // Render simulated recommendations as readable cards.
