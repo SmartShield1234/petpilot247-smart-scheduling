@@ -301,5 +301,103 @@ async def guarded_booking(request: Request):
     raise HTTPException(503, "Live booking not authorized")
 
 
+
+
+@app.get("/internal/scheduling/ghl-availability")
+async def read_only_ghl_availability(
+    calendar_id: str,
+    days: int = 3,
+    x_reconciliation_key: str | None = Header(default=None),
+):
+    """Protected live GHL free-slot DIAGNOSTIC, not a recommendation or booking.
+
+    Staff IDs come only from the deployed inventory; responses contain counts,
+    never customer details or raw availability timestamps. An available GHL
+    start time does not establish a valid travel-aware mobile grooming slot.
+    """
+    import json
+    import secrets
+    from datetime import datetime, timedelta, timezone
+    from pathlib import Path
+
+    import httpx
+
+    expected = os.getenv("PETPILOT_RECONCILIATION_API_KEY", "").strip()
+    if not expected:
+        raise HTTPException(503, "Integration authentication not configured")
+    if not x_reconciliation_key or not secrets.compare_digest(x_reconciliation_key, expected):
+        raise HTTPException(401, "Unauthorized")
+
+    if (os.getenv("PETPILOT_ENV", "").strip().lower() != "production"
+            or os.getenv("PETPILOT_LIVE_BOOKING_ENABLED", "").strip().lower() != "false"):
+        raise HTTPException(503, "Unsafe environment")
+    if not 1 <= days <= 7 or not calendar_id.strip():
+        raise HTTPException(422, "Calendar ID and 1-7 days required")
+
+    configured = [x.strip() for x in os.getenv("GHL_SCHEDULING_CALENDAR_IDS", "").split(",") if x.strip()]
+    if len(configured) != 11 or len(set(configured)) != 11 or calendar_id not in configured:
+        raise HTTPException(422, "Calendar is not in complete configured inventory")
+
+    inventory = Path(__file__).with_name("ghl_grooming_staff_inventory.json")
+    try:
+        records = json.loads(inventory.read_text(encoding="utf-8"))
+        if not isinstance(records, list) or len(records) != 4:
+            raise ValueError("Invalid grooming inventory")
+        matches = [x for x in records if isinstance(x, dict) and x.get("calendar_id") == calendar_id]
+        if len(matches) != 1:
+            raise ValueError("Unknown grooming calendar")
+        record = matches[0]
+        ids = record["ghl_user_ids"]
+        if (not isinstance(ids, list) or not ids or len(ids) != len(set(ids))
+                or any(not isinstance(x, str) or not x.strip() for x in ids)):
+            raise ValueError("Invalid user IDs")
+    except (OSError, ValueError, KeyError, TypeError):
+        raise HTTPException(503, "Grooming staff inventory unavailable")
+
+    token = os.getenv("GHL_API_TOKEN", "").strip()
+    if not token:
+        raise HTTPException(503, "GHL read credentials unavailable")
+    start = datetime.now(timezone.utc)
+    end = start + timedelta(days=days)
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Version": os.getenv("GHL_API_VERSION", "2021-07-28"),
+        "Accept": "application/json",
+    }
+    # Parse validated GHL responses, but do not infer full service-duration coverage.
+    from ghl_free_slot_parser import parse_ghl_free_slots
+    counts = []
+    try:
+        async with httpx.AsyncClient(timeout=25) as client:
+            for uid in ids:
+                resp = await client.get(
+                    f"https://services.leadconnectorhq.com/calendars/{calendar_id}/free-slots",
+                    headers=headers,
+                    params={
+                        "startDate": int(start.timestamp() * 1000),
+                        "endDate": int(end.timestamp() * 1000),
+                        "timezone": "America/New_York",
+                        "userId": uid,
+                    },
+                )
+                resp.raise_for_status()
+                parsed = parse_ghl_free_slots(resp.json())
+                counts.append({"ghl_user_id": uid, "free_start_count": parsed["total_slots"]})
+    except (httpx.HTTPError, ValueError, TypeError, KeyError):
+        raise HTTPException(503, "GHL availability retrieval failed")
+
+    return {
+        "calendar_id": calendar_id,
+        "days_queried": days,
+        "staff_counts": counts,
+        "source": "ghl_free_slots_read_only",
+        "verification_status": "free_slots_only",
+        "geographic_eligibility_authenticated": False,
+        "synchronization_verified": False,
+        "customer_recommendations_available": False,
+        "booking_authorized": False,
+    }
+
+
 # Preserve the existing demo routes.
 app.mount("/", demo_app)
