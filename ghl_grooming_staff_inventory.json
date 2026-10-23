@@ -1,0 +1,49 @@
+[
+  {
+    "calendar_id": "mStTZCiFB42kzedTjWfO",
+    "calendar_name": "Mobile Grooming Visit",
+    "ghl_user_ids": [
+      "hNKJzX59QWSvc89d1dsr",
+      "oPHf6c6jG8VjacvEdarB",
+      "ZJfQ4KHsxKu5ltwGIMnw"
+    ],
+    "approved_for_mobile_grooming": false,
+    "geographic_eligibility_verified": false
+  },
+  {
+    "calendar_id": "SwW8f2Plp2e0iZdL8A7j",
+    "calendar_name": "PetPilot247 \u2013 Full Groom",
+    "ghl_user_ids": [
+      "UttgZsVwx5ZelfCtMoy2",
+      "hNKJzX59QWSvc89d1dsr",
+      "s1vrxJZo2xarfDJsvjda",
+      "ZJfQ4KHsxKu5ltwGIMnw"
+    ],
+    "approved_for_mobile_grooming": false,
+    "geographic_eligibility_verified": false
+  },
+  {
+    "calendar_id": "U6OROmHZOp7ILULsH18B",
+    "calendar_name": "PetPilot247 \u2013 Nail Trim",
+    "ghl_user_ids": [
+      "hNKJzX59QWSvc89d1dsr",
+      "UttgZsVwx5ZelfCtMoy2",
+      "s1vrxJZo2xarfDJsvjda",
+      "ZJfQ4KHsxKu5ltwGIMnw"
+    ],
+    "approved_for_mobile_grooming": false,
+    "geographic_eligibility_verified": false
+  },
+  {
+    "calendar_id": "XdmXwlbboWhDcrMcP0CF",
+    "calendar_name": "PetPilot247 \u2013 Bath & Brush",
+    "ghl_user_ids": [
+      "UttgZsVwx5ZelfCtMoy2",
+      "hNKJzX59QWSvc89d1dsr",
+      "s1vrxJZo2xarfDJsvjda",
+      "ZJfQ4KHsxKu5ltwGIMnw"
+    ],
+    "approved_for_mobile_grooming": false,
+    "geographic_eligibility_verified": false
+  }
+]
