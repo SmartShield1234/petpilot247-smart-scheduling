@@ -215,5 +215,91 @@ async def run_appointment_reconciliation(
             lock_connection.close()
 
 
+
+
+# Internal operational readiness inspection. This is NOT a booking or
+# customer-facing recommendations endpoint. An authenticated status report
+# cannot be used as authorization to override safety requirements.
+@app.get("/internal/scheduling/readiness")
+async def scheduling_readiness(
+    x_reconciliation_key: str | None = Header(default=None),
+):
+    import secrets
+    import json
+    from pathlib import Path
+
+    key = os.getenv("PETPILOT_RECONCILIATION_API_KEY", "").strip()
+    if not key:
+        raise HTTPException(503, "Readiness authentication not configured")
+    if not x_reconciliation_key or not secrets.compare_digest(x_reconciliation_key, key):
+        raise HTTPException(401, "Unauthorized")
+
+    if (os.getenv("PETPILOT_ENV", "").strip().lower() != "production"
+            or os.getenv("PETPILOT_LIVE_BOOKING_ENABLED", "").strip().lower() != "false"):
+        raise HTTPException(503, "Unsafe environment configuration")
+
+    url = require_postgres_config()
+    try:
+        with psycopg.connect(url, sslmode="require", connect_timeout=15) as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT status FROM appointment_sync_health WHERE id = 1")
+                row = cur.fetchone()
+        sync_status = row[0] if row else "missing"
+    except Exception:
+        raise HTTPException(503, "Appointment synchronization status unavailable")
+
+    calendar_ids = [x.strip() for x in os.getenv("GHL_SCHEDULING_CALENDAR_IDS", "").split(",") if x.strip()]
+    inventory_path = Path(__file__).with_name("ghl_grooming_staff_inventory.json")
+    inventory_valid = False
+    inventory_calendars = 0
+    approved_calendars = 0
+    if inventory_path.is_file():
+        try:
+            data = json.loads(inventory_path.read_text(encoding="utf-8"))
+            if isinstance(data, list):
+                ids = [item.get("calendar_id") for item in data if isinstance(item, dict)]
+                inventory_valid = len(ids) == len(data) and len(set(ids)) == len(ids) and all(isinstance(x, str) and x for x in ids)
+                if inventory_valid:
+                    inventory_calendars = len(data)
+                    approved_calendars = sum(
+                        item.get("approved_for_mobile_grooming") is True
+                        and item.get("geographic_eligibility_verified") is True
+                        for item in data
+                    )
+        except (ValueError, OSError, TypeError):
+            pass
+
+    return {
+        "service": "petpilot247-scheduling-readiness",
+        "sync_status": sync_status,
+        "synchronization_verified": False,
+        "calendar_configuration_valid": len(calendar_ids) == 11 and len(set(calendar_ids)) == 11,
+        "grooming_inventory_present_and_valid": inventory_valid,
+        "grooming_calendar_count": inventory_calendars,
+        "inventory_flagged_approved_calendars": approved_calendars,
+        "eligibility_source_authenticated": False,
+        "customer_recommendations_available": False,
+        "booking_authorized": False,
+        "reason": "Authoritative eligibility, full synchronization, and booking authorization pending",
+    }
+
+
+@app.post("/api/scheduling/recommendations")
+async def guarded_recommendations(request: Request):
+    # Never accept client-provided approval, geographic decisions or route
+    # evidence as authorization. No production-safe recommendation pipeline
+    # is present in the uploaded source, so this endpoint fails closed.
+    if os.getenv("PETPILOT_LIVE_BOOKING_ENABLED", "").strip().lower() != "false":
+        raise HTTPException(503, "Booking safety guard unavailable")
+    raise HTTPException(503, "Authoritative scheduling eligibility and synchronization not yet verified")
+
+
+@app.post("/api/scheduling/book")
+async def guarded_booking(request: Request):
+    # No customer booking until final GHL availability check, durable lock,
+    # trusted result verification and business authorization are integrated.
+    raise HTTPException(503, "Live booking not authorized")
+
+
 # Preserve the existing demo routes.
 app.mount("/", demo_app)
