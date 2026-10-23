@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 import psycopg
 from fastapi import FastAPI, Header, HTTPException, Request
 
+from pavi_recommendation_router import router as pavi_router
+
 from petpilot247_demo_app import app as demo_app
 from ghl_webhook_receiver import prepare_verified_appointment_event
 from postgres_appointment_events import (
@@ -51,10 +53,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
+
 app = FastAPI(
     title="PetPilot247 Integrated Backend",
     lifespan=lifespan,
 )
+
+app.include_router(pavi_router)
+
 
 
 @app.post("/webhooks/ghl/appointments")
