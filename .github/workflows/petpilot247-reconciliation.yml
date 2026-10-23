@@ -3,6 +3,8 @@ name: PetPilot247 Reconciliation
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
 
 permissions:
   contents: read
