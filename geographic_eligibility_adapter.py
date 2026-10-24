@@ -63,8 +63,10 @@ class GeographicEligibilityAdapter:
             or not isinstance(staff.work_end, datetime)
             or staff.work_start.tzinfo is None
             or staff.work_end.tzinfo is None
+            or staff.work_start.utcoffset() is None
+            or staff.work_end.utcoffset() is None
             or staff.work_start >= staff.work_end
-        ):
+            ):
             raise IntegrationUnavailable(
                 "Invalid verified working hours"
             )
