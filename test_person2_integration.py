@@ -9,7 +9,7 @@ from pavi_live_ghl_provider import (
     IntegrationUnavailable,
     LiveGHLProviders,
 )
-from pavi_recommendation_pipeline import Staff
+from pavi_recommendation_pipeline import Staff, Request, Snapshot, recommend
 from maps_service import get_driving_minutes
 
 
@@ -73,6 +73,53 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         result = await provider.travel("Customer A", "Customer B")
         self.assertEqual(result, 18.0)
+
+    async def test_maps_failure_blocks_recommendations(self):
+        class FailingMapsProvider:
+            async def appointments(self, calendar_id):
+                return Snapshot(
+                    sync_verified=True,
+                    complete_all_calendars=True,
+                    groomer_ids=("test-groomer",),
+                    appointments_by_groomer={"test-groomer": ()},
+                )
+
+            async def staff(self, calendar_id, groomer_id, address):
+                start = datetime(2026, 10, 26, 9, tzinfo=timezone.utc)
+                return Staff(
+                    approved=True,
+                    territory_verified=True,
+                    work_start=start,
+                    work_end=start + timedelta(hours=8),
+                    depot_address="Test Depot",
+                    setup_minutes=10,
+                    cleanup_minutes=10,
+                    buffer_minutes=15,
+                )
+
+            async def free_starts(self, calendar_id, groomer_id, preferred):
+                return frozenset({preferred})
+
+            async def travel(self, origin, destination):
+                raise RuntimeError("Google Maps unavailable")
+
+        request = Request(
+            calendar_id="test-calendar",
+            customer_address="Test Customer",
+            preferred_start=datetime(
+                2026, 10, 26, 11, tzinfo=timezone.utc
+            ),
+            service_minutes=90,
+        )
+
+        result = await recommend(request, FailingMapsProvider())
+
+        self.assertEqual(result["recommendations"], [])
+        self.assertFalse(result["booking_authorized"])
+        self.assertEqual(
+            result["reason"],
+            "Verified upstream evidence unavailable",
+        )
 
 
 if __name__ == "__main__":
