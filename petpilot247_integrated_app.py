@@ -8,6 +8,8 @@ from fastapi import FastAPI, Header, HTTPException, Request
 
 from pavi_recommendation_router import router as pavi_router
 
+from petpilot247_ghl_oauth import router as oauth_router
+
 from petpilot247_demo_app import app as demo_app
 from ghl_webhook_receiver import prepare_verified_appointment_event
 from postgres_appointment_events import (
@@ -60,6 +62,8 @@ app = FastAPI(
 )
 
 app.include_router(pavi_router)
+
+app.include_router(oauth_router)
 
 
 
