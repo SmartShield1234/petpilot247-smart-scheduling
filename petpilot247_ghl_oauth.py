@@ -75,7 +75,7 @@ def start():
         with conn.transaction(), conn.cursor() as cur:
             cur.execute("DELETE FROM petpilot_oauth_states WHERE expires_at < NOW()")
             cur.execute("INSERT INTO petpilot_oauth_states (state_hash, expires_at) "
-                        "VALUES (%s, NOW() + INTERVAL '10 minutes')", (_state_digest(state),))
+                        "VALUES (%s, NOW() + INTERVAL '30 minutes')", (_state_digest(state),))
     install_url = settings["PETPILOT_GHL_INSTALL_URL"]
     parts = urlsplit(install_url)
     if parts.scheme != "https" or not parts.netloc:
