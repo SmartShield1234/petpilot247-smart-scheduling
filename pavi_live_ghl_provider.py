@@ -21,23 +21,25 @@ class IntegrationUnavailable(RuntimeError):
 
 
 class LiveGHLProviders:
+    
     def __init__(
-    self,
-    *,
-    snapshot_authority=None,
-    appointment_snapshot_authority=None,        
-    staff_authority=None,
-    calendar_timezone_authority=None,
-    routes=None,
-    http_client=None,
-):
-    self.snapshot_authority = snapshot_authority
-    self.appointment_snapshot_authority = appointment_snapshot_authority
-    self.staff_authority = staff_authority
-    self.calendar_timezone_authority = calendar_timezone_authority
-    self.routes = routes or self._google_route
-    self.http_client = http_client
-    self._snapshot = None
+        self,
+        *,
+        snapshot_authority=None,
+        appointment_snapshot_authority=None,
+        staff_authority=None,
+        calendar_timezone_authority=None,
+        routes=None,
+        http_client=None,
+    ):
+        self.snapshot_authority = snapshot_authority
+        self.appointment_snapshot_authority = appointment_snapshot_authority
+        self.staff_authority = staff_authority
+        self.calendar_timezone_authority = calendar_timezone_authority
+        self.routes = routes or self._google_route
+        self.http_client = http_client
+        self._snapshot = None
+
 
     @staticmethod
     def _calendar_ids():
