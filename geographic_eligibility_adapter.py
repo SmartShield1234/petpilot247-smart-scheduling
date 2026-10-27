@@ -1,13 +1,13 @@
 
-"""Trusted geographic eligibility adapter for PetPilot247.
+"""Geographic eligibility adapter for PetPilot247.
 
-This module does not grant geographic approval itself.
-It requires independently authenticated evidence from an
-authoritative staff and territory service.
+Requires a server-controlled authoritative provider.
+Does not grant approvals or authorize live booking.
 """
 
-from datetime import datetime
-from typing import Callable, Awaitable
+from datetime import date, datetime
+from typing import Awaitable, Callable
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pavi_recommendation_pipeline import Staff
 from pavi_live_ghl_provider import IntegrationUnavailable
@@ -25,11 +25,38 @@ class GeographicEligibilityAdapter:
         calendar_id: str,
         groomer_id: str,
         customer_address: str,
+        appointment_date: date | None = None,
+        timezone_name: str | None = None,
     ) -> Staff:
 
-        if not calendar_id or not groomer_id or not customer_address:
+        if not all(
+            isinstance(value, str) and value.strip()
+            for value in (
+                calendar_id,
+                groomer_id,
+                customer_address,
+            )
+        ):
             raise IntegrationUnavailable(
                 "Missing geographic eligibility inputs"
+            )
+
+        # The new date-specific contract requires both values.
+        # Legacy three-argument calls fail closed.
+        if (
+            type(appointment_date) is not date
+            or not isinstance(timezone_name, str)
+            or not timezone_name.strip()
+        ):
+            raise IntegrationUnavailable(
+                "Verified appointment date and timezone required"
+            )
+
+        try:
+            timezone = ZoneInfo(timezone_name)
+        except (ZoneInfoNotFoundError, ValueError, TypeError):
+            raise IntegrationUnavailable(
+                "Invalid appointment timezone"
             )
 
         if self.authority is None:
@@ -37,11 +64,18 @@ class GeographicEligibilityAdapter:
                 "Authoritative geographic eligibility service unavailable"
             )
 
-        staff = await self.authority(
-            calendar_id,
-            groomer_id,
-            customer_address,
-        )
+        try:
+            staff = await self.authority(
+                calendar_id,
+                groomer_id,
+                customer_address,
+                appointment_date,
+                timezone_name,
+            )
+        except Exception as exc:
+            raise IntegrationUnavailable(
+                "Authoritative staff verification unavailable"
+            ) from exc
 
         if not isinstance(staff, Staff):
             raise IntegrationUnavailable(
@@ -55,25 +89,54 @@ class GeographicEligibilityAdapter:
 
         if staff.territory_verified is not True:
             raise IntegrationUnavailable(
-                "Customer outside verified service territory"
+                "Verified geographic eligibility unavailable"
             )
+
+        start = staff.work_start
+        end = staff.work_end
 
         if (
-            not isinstance(staff.work_start, datetime)
-            or not isinstance(staff.work_end, datetime)
-            or staff.work_start.tzinfo is None
-            or staff.work_end.tzinfo is None
-            or staff.work_start.utcoffset() is None
-            or staff.work_end.utcoffset() is None
-            or staff.work_start >= staff.work_end
-            ):
+            not isinstance(start, datetime)
+            or not isinstance(end, datetime)
+            or start.tzinfo is None
+            or end.tzinfo is None
+            or start.utcoffset() is None
+            or end.utcoffset() is None
+        ):
             raise IntegrationUnavailable(
-                "Invalid verified working hours"
+                "Timezone-aware working hours required"
             )
 
-        if not isinstance(staff.depot_address, str) or not staff.depot_address.strip():
+        # Require the requested local date and timezone.
+        local_start = start.astimezone(timezone)
+        local_end = end.astimezone(timezone)
+
+        if (
+            local_start.date() != appointment_date
+            or local_end.date() != appointment_date
+            or local_start >= local_end
+        ):
             raise IntegrationUnavailable(
-                "Verified groomer depot address unavailable"
+                "Date-specific working hours unavailable"
+            )
+
+        # Reject datetimes that do not represent valid local times
+        # in the requested timezone, including DST gaps.
+        for value in (start, end):
+            local = value.astimezone(timezone)
+            if local.astimezone(ZoneInfo("UTC")).astimezone(
+                timezone
+            ) != local:
+                raise IntegrationUnavailable(
+                    "Invalid daylight-saving-time schedule"
+                )
+
+        if (
+            not isinstance(staff.depot_address, str)
+            or not staff.depot_address.strip()
+        ):
+            raise IntegrationUnavailable(
+                "Verified groomer depot unavailable"
             )
 
         for value in (

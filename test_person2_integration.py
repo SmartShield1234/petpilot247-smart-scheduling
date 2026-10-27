@@ -1,8 +1,12 @@
 
+"""Person 2 integration tests for PetPilot247 Smart Scheduling."""
+
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from geographic_eligibility_adapter import GeographicEligibilityAdapter
+from geographic_staff_bridge import create_geographic_staff_authority
 from pavi_live_ghl_provider import (
     IntegrationUnavailable,
     LiveGHLProviders,
@@ -15,14 +19,19 @@ from pavi_recommendation_pipeline import (
 )
 
 
+TEST_DATE = date(2026, 10, 26)
+TEST_ZONE = "America/New_York"
+
+
 def test_staff(territory_verified=True):
-    start = datetime.now(timezone.utc)
+    """Create fictional, date-specific Staff data for testing."""
+    zone = ZoneInfo(TEST_ZONE)
 
     return Staff(
         approved=True,
         territory_verified=territory_verified,
-        work_start=start,
-        work_end=start + timedelta(hours=8),
+        work_start=datetime(2026, 10, 26, 9, tzinfo=zone),
+        work_end=datetime(2026, 10, 26, 17, tzinfo=zone),
         depot_address="Test Depot",
         setup_minutes=10,
         cleanup_minutes=10,
@@ -40,6 +49,8 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 "calendar",
                 "groomer",
                 "address",
+                TEST_DATE,
+                TEST_ZONE,
             )
 
     async def test_rejected_territory(self):
@@ -53,6 +64,8 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 "calendar",
                 "groomer",
                 "address",
+                TEST_DATE,
+                TEST_ZONE,
             )
 
     async def test_naive_working_hours_rejected(self):
@@ -77,6 +90,8 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 "calendar",
                 "groomer",
                 "address",
+                TEST_DATE,
+                TEST_ZONE,
             )
 
     async def test_approved_territory(self):
@@ -89,28 +104,141 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
             "calendar",
             "groomer",
             "address",
+            TEST_DATE,
+            TEST_ZONE,
+        )
+
+        self.assertTrue(staff.approved)
+        self.assertTrue(staff.territory_verified)
+        self.assertEqual(
+            staff.work_start.date(),
+            TEST_DATE,
+        )
+        self.assertEqual(
+            staff.work_end.date(),
+            TEST_DATE,
+        )
+
+    async def test_staff_bridge_integration(self):
+        """Verify the five-argument Staff Bridge directly."""
+
+        async def authority(
+            calendar_id,
+            groomer_id,
+            address,
+            appointment_date,
+            timezone_name,
+        ):
+            self.assertEqual(calendar_id, "calendar")
+            self.assertEqual(groomer_id, "groomer")
+            self.assertEqual(address, "address")
+            self.assertEqual(appointment_date, TEST_DATE)
+            self.assertEqual(timezone_name, TEST_ZONE)
+
+            return test_staff(True)
+
+        staff_authority = create_geographic_staff_authority(
+            authenticated_authority=authority
+        )
+
+        staff = await staff_authority(
+            "calendar",
+            "groomer",
+            "address",
+            TEST_DATE,
+            TEST_ZONE,
         )
 
         self.assertTrue(staff.approved)
         self.assertTrue(staff.territory_verified)
 
-    async def test_provider_integration(self):
+    async def test_invalid_appointment_date(self):
         async def authority(*args):
-            return test_staff(True)
+            return test_staff()
 
         adapter = GeographicEligibilityAdapter(authority)
 
-        provider = LiveGHLProviders(
-            staff_authority=adapter.verify
-        )
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                "2026-10-26",
+                TEST_ZONE,
+            )
 
-        staff = await provider.staff(
-            "calendar",
-            "groomer",
-            "address",
-        )
+    async def test_missing_timezone(self):
+        async def authority(*args):
+            return test_staff()
 
-        self.assertTrue(staff.territory_verified)
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                TEST_DATE,
+                None,
+            )
+
+    async def test_invalid_timezone(self):
+        async def authority(*args):
+            return test_staff()
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                TEST_DATE,
+                "Invalid/Timezone",
+            )
+
+    async def test_unavailable_working_schedule(self):
+        async def authority(*args):
+            return None
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                TEST_DATE,
+                TEST_ZONE,
+            )
+
+    async def test_mismatched_schedule_date(self):
+        async def authority(*args):
+            return test_staff()
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                date(2026, 10, 27),
+                TEST_ZONE,
+            )
+
+    async def test_legacy_three_argument_call_blocked(self):
+        async def authority(*args):
+            return test_staff()
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+            )
 
     async def test_maps_provider_integration(self):
         async def route(origin, destination):
