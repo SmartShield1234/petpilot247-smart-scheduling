@@ -138,14 +138,67 @@ async def reconcile_postgres_appointments(
             if all_stored[identity]["is_deleted"]
         }
 
-        changed = {
-            identity
-            for identity in set(fresh) & set(all_stored)
-            if any(
-                fresh[identity][field] != all_stored[identity][field]
-                for field in FIELDS
+        
+        def normalize_timestamp(value):
+            if isinstance(value, datetime):
+                result = value
+            else:
+                result = datetime.fromisoformat(
+                    str(value).replace("Z", "+00:00")
+                )
+
+            if result.tzinfo is None or result.utcoffset() is None:
+                raise RuntimeError("Timezone-aware timestamp required")
+
+            return result.astimezone(timezone.utc)
+
+
+        changed = set()
+        newer_webhook_revisions_preserved = 0
+
+        for identity in set(fresh) & set(all_stored):
+            incoming = fresh[identity]
+            stored_record = all_stored[identity]
+
+            # Compare scheduling timestamps as UTC instants.
+            schedule_changed = any(
+                normalize_timestamp(incoming[field])
+                != normalize_timestamp(stored_record[field])
+                for field in ("start_time", "end_time")
             )
-        }
+
+            # All other appointment fields must still match.
+            metadata_changed = any(
+                incoming[field] != stored_record[field]
+                for field in (
+                    "calendar_id",
+                    "assigned_user_id",
+                    "contact_id",
+                    "appointment_status",
+                )
+            )
+
+            incoming_revision = normalize_timestamp(
+                incoming["date_updated"]
+            )
+            stored_revision = normalize_timestamp(
+                stored_record["date_updated"]
+            )
+
+            if schedule_changed or metadata_changed:
+                changed.add(identity)
+                continue
+
+            # An older API snapshot must not replace a newer
+            # authenticated webhook revision.
+            if incoming_revision < stored_revision:
+                newer_webhook_revisions_preserved += 1
+                continue
+
+            # A genuinely newer revision still needs review.
+            if incoming_revision > stored_revision:
+                changed.add(identity)
+
 
         if missing or changed or no_longer_returned or deleted_conflicts:
             mark_postgres_sync_uncertain(
