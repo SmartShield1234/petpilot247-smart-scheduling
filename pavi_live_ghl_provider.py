@@ -25,6 +25,7 @@ class LiveGHLProviders:
     self,
     *,
     snapshot_authority=None,
+    appointment_snapshot_authority=None,        
     staff_authority=None,
     calendar_timezone_authority=None,
     routes=None,
@@ -53,7 +54,35 @@ class LiveGHLProviders:
         verified = await self.snapshot_authority()
         if verified is not True:
             raise IntegrationUnavailable('Synchronization incomplete')
-        raise IntegrationUnavailable('Authenticated appointment-to-groomer mapping not yet installed')
+       if self.appointment_snapshot_authority is None:
+    raise IntegrationUnavailable(
+        "Authenticated appointment snapshot authority not configured"
+    )
+
+snapshot = await self.appointment_snapshot_authority(calendar_id)
+
+if not isinstance(snapshot, Snapshot):
+    raise IntegrationUnavailable("Invalid appointment snapshot")
+
+if (
+    snapshot.sync_verified is not True
+    or snapshot.complete_all_calendars is not True
+):
+    raise IntegrationUnavailable(
+        "Appointment snapshot verification incomplete"
+    )
+
+if not snapshot.groomer_ids:
+    raise IntegrationUnavailable(
+        "Verified groomer inventory unavailable"
+    )
+
+if set(snapshot.appointments_by_groomer) != set(snapshot.groomer_ids):
+    raise IntegrationUnavailable(
+        "Appointment-to-groomer coverage incomplete"
+    )
+
+return snapshot
 
     async def staff(
     self,
