@@ -134,30 +134,34 @@ class LiveGHLProviders:
         return staff
 
 
+
     async def calendar_timezone(self, calendar_id: str) -> str:
+        if calendar_id not in self._calendar_ids():
+            raise IntegrationUnavailable("Calendar not configured")
 
-async def calendar_timezone(self, calendar_id: str) -> str:
-    if calendar_id not in self._calendar_ids():
-        raise IntegrationUnavailable("Calendar not configured")
+        if self.calendar_timezone_authority is None:
+            raise IntegrationUnavailable(
+                "Authenticated calendar timezone authority not configured"
+            )
 
-    if self.calendar_timezone_authority is None:
-        raise IntegrationUnavailable(
-            "Authenticated calendar timezone authority not configured"
-        )
+        timezone_name = await self.calendar_timezone_authority(calendar_id)
 
-    timezone_name = await self.calendar_timezone_authority(calendar_id)
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+        if not isinstance(timezone_name, str) or not timezone_name.strip():
+            raise IntegrationUnavailable(
+                "Verified calendar timezone unavailable"
+            )
 
-    if not isinstance(timezone_name, str) or not timezone_name.strip():
-        raise IntegrationUnavailable("Verified calendar timezone unavailable")
+        try:
+            ZoneInfo(timezone_name)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise IntegrationUnavailable(
+                "Invalid calendar timezone"
+            ) from exc
 
-    try:
-        ZoneInfo(timezone_name)
-    except (ZoneInfoNotFoundError, ValueError) as exc:
-        raise IntegrationUnavailable("Invalid calendar timezone") from exc
+        return timezone_name
 
-    return timezone_name
 
     async def free_starts(
         self,
