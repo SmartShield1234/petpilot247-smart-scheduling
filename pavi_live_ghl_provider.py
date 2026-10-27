@@ -93,26 +93,27 @@ class LiveGHLProviders:
         return snapshot
 
 
+   
     async def staff(
-    self,
-    calendar_id: str,
-    groomer_id: str,
-    address: str,
-    appointment_date,
-    timezone_name: str,
-) -> Staff:
-    if self.staff_authority is None:
-        raise IntegrationUnavailable(
-            "Authoritative groomer territory service unavailable"
-        )
-
-    staff = await self.staff_authority(
-        calendar_id,
-        groomer_id,
-        address,
+        self,
+        calendar_id: str,
+        groomer_id: str,
+        address: str,
         appointment_date,
-        timezone_name,
-    )
+        timezone_name: str,
+    ) -> Staff:
+        if self.staff_authority is None:
+            raise IntegrationUnavailable(
+                "Authoritative groomer territory service unavailable"
+            )
+
+        staff = await self.staff_authority(
+            calendar_id,
+            groomer_id,
+            address,
+            appointment_date,
+            timezone_name,
+        )
 
     if not isinstance(staff, Staff):
         raise IntegrationUnavailable("Invalid staff evidence")
