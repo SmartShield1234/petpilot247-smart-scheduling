@@ -94,6 +94,7 @@ class LiveGHLProviders:
 
 
    
+
     async def staff(
         self,
         calendar_id: str,
@@ -115,13 +116,13 @@ class LiveGHLProviders:
             timezone_name,
         )
 
-    if not isinstance(staff, Staff):
-        raise IntegrationUnavailable("Invalid staff evidence")
+        if not isinstance(staff, Staff):
+            raise IntegrationUnavailable("Invalid staff evidence")
 
-    if staff.approved is not True or staff.territory_verified is not True:
-        raise IntegrationUnavailable("Staff authority not verified")
+        if staff.approved is not True or staff.territory_verified is not True:
+            raise IntegrationUnavailable("Staff authority not verified")
 
-            if (
+        if (
             staff.work_start.tzinfo is None
             or staff.work_end.tzinfo is None
             or staff.work_start.utcoffset() is None
@@ -131,6 +132,7 @@ class LiveGHLProviders:
             raise IntegrationUnavailable("Invalid verified working hours")
 
         return staff
+
 
     async def calendar_timezone(self, calendar_id: str) -> str:
 
