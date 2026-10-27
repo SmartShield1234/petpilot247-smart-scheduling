@@ -32,6 +32,7 @@ class LiveGHLProviders:
     http_client=None,
 ):
     self.snapshot_authority = snapshot_authority
+    self.appointment_snapshot_authority = appointment_snapshot_authority
     self.staff_authority = staff_authority
     self.calendar_timezone_authority = calendar_timezone_authority
     self.routes = routes or self._google_route
