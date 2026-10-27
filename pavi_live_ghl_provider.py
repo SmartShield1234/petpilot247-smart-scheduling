@@ -21,15 +21,21 @@ class IntegrationUnavailable(RuntimeError):
 
 
 class LiveGHLProviders:
-    def __init__(self, *, snapshot_authority=None, staff_authority=None,
-                 routes=None, http_client=None):
-        # Authorities must be server-controlled functions or authenticated
-        # service clients. Do not expose their inputs as request parameters.
-        self.snapshot_authority = snapshot_authority
-        self.staff_authority = staff_authority
-        self.routes = routes or self._google_route
-        self.http_client = http_client
-        self._snapshot = None
+    def __init__(
+    self,
+    *,
+    snapshot_authority=None,
+    staff_authority=None,
+    calendar_timezone_authority=None,
+    routes=None,
+    http_client=None,
+):
+    self.snapshot_authority = snapshot_authority
+    self.staff_authority = staff_authority
+    self.calendar_timezone_authority = calendar_timezone_authority
+    self.routes = routes or self._google_route
+    self.http_client = http_client
+    self._snapshot = None
 
     @staticmethod
     def _calendar_ids():
@@ -49,16 +55,70 @@ class LiveGHLProviders:
             raise IntegrationUnavailable('Synchronization incomplete')
         raise IntegrationUnavailable('Authenticated appointment-to-groomer mapping not yet installed')
 
-    async def staff(self, calendar_id: str, groomer_id: str, address: str) -> Staff:
-        if self.staff_authority is None:
-            raise IntegrationUnavailable('Authoritative groomer territory service unavailable')
-        staff = await self.staff_authority(calendar_id, groomer_id, address)
-        if not isinstance(staff, Staff):
-            raise IntegrationUnavailable('Invalid staff evidence')
-        return staff
+    async def staff(
+    self,
+    calendar_id: str,
+    groomer_id: str,
+    address: str,
+    appointment_date,
+    timezone_name: str,
+) -> Staff:
+    if self.staff_authority is None:
+        raise IntegrationUnavailable(
+            "Authoritative groomer territory service unavailable"
+        )
+
+    staff = await self.staff_authority(
+        calendar_id,
+        groomer_id,
+        address,
+        appointment_date,
+        timezone_name,
+    )
+
+    if not isinstance(staff, Staff):
+        raise IntegrationUnavailable("Invalid staff evidence")
+
+    if staff.approved is not True or staff.territory_verified is not True:
+        raise IntegrationUnavailable("Staff authority not verified")
+
+    if (
+        staff.work_start.tzinfo is None
+        or staff.work_end.tzinfo is None
+        or staff.work_start.utcoffset() is None
+        or staff.work_end.utcoffset() is None
+        or staff.work_end <= staff.work_start
+    ):
+        raise IntegrationUnavailable("Invalid verified working hours")
+
+    return staff
+
+async def calendar_timezone(self, calendar_id: str) -> str:
+    if calendar_id not in self._calendar_ids():
+        raise IntegrationUnavailable("Calendar not configured")
+
+    if self.calendar_timezone_authority is None:
+        raise IntegrationUnavailable(
+            "Authenticated calendar timezone authority not configured"
+        )
+
+    timezone_name = await self.calendar_timezone_authority(calendar_id)
+
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    if not isinstance(timezone_name, str) or not timezone_name.strip():
+        raise IntegrationUnavailable("Verified calendar timezone unavailable")
+
+    try:
+        ZoneInfo(timezone_name)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise IntegrationUnavailable("Invalid calendar timezone") from exc
+
+    return timezone_name
 
     async def free_starts(self, calendar_id: str, groomer_id: str,
                           preferred: datetime) -> frozenset[datetime]:
+      timezone_name = await self.calendar_timezone(calendar_id)
         if calendar_id not in self._calendar_ids():
             raise IntegrationUnavailable('Calendar not configured')
         if preferred.tzinfo is None:
@@ -73,7 +133,7 @@ class LiveGHLProviders:
                    'Accept': 'application/json'}
         params = {'startDate': int(start.timestamp()*1000),
                   'endDate': int(end.timestamp()*1000),
-                  'timezone': 'America/New_York', 'userId': groomer_id}
+                  'timeZone': timezone_name, 'userId': groomer_id}
         async def fetch(client):
             response = await client.get(
                 f'https://services.leadconnectorhq.com/calendars/{calendar_id}/free-slots',
