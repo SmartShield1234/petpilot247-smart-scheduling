@@ -155,14 +155,21 @@ async def calendar_timezone(self, calendar_id: str) -> str:
 
     return timezone_name
 
-    async def free_starts(self, calendar_id: str, groomer_id: str,
-                          preferred: datetime) -> frozenset[datetime]:
-      timezone_name = await self.calendar_timezone(calendar_id)
+    async def free_starts(
+        self,
+        calendar_id: str,
+        groomer_id: str,
+        preferred: datetime,
+    ) -> frozenset[datetime]:
+        timezone_name = await self.calendar_timezone(calendar_id)
+
         if calendar_id not in self._calendar_ids():
-            raise IntegrationUnavailable('Calendar not configured')
+            raise IntegrationUnavailable("Calendar not configured")
+
         if preferred.tzinfo is None:
-            raise IntegrationUnavailable('Timezone-aware time required')
-        token = os.getenv('GHL_API_TOKEN', '').strip()
+            raise IntegrationUnavailable("Timezone-aware time required")
+
+        token = os.getenv("GHL_API_TOKEN", "").strip()
         if not token:
             raise IntegrationUnavailable('GHL token missing')
         start = preferred.astimezone(timezone.utc) - timedelta(hours=12)
