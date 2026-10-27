@@ -6,6 +6,7 @@ availability, appointment records, eligibility, driving minutes, or verification
 from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from typing import Protocol
 from pavi_slot_validator import Candidate, Appointment, best_slots
 
@@ -41,7 +42,18 @@ class Staff:
 
 class Providers(Protocol):
     async def appointments(self, calendar_id: str) -> Snapshot: ...
-    async def staff(self, calendar_id: str, groomer_id: str, address: str) -> Staff: ...
+    async def staff(
+    self,
+    calendar_id: str,
+    groomer_id: str,
+    address: str,
+    appointment_date,
+    timezone_name: str,
+) -> Staff: ...
+    async def calendar_timezone(
+    self,
+    calendar_id: str,
+) -> str: ...
     async def free_starts(self, calendar_id: str, groomer_id: str,
                           preferred: datetime) -> frozenset[datetime]: ...
     async def travel(self, origin: str, destination: str) -> float: ...
@@ -55,14 +67,37 @@ async def recommend(request: Request, providers: Providers) -> dict:
         raise ValueError('Invalid service duration or result count')
     if request.preferred_start.tzinfo is None:
         raise ValueError('Timezone-aware preferred time required')
+        timezone_name = await providers.calendar_timezone(
+    request.calendar_id
+)
+
+if not isinstance(timezone_name, str) or not timezone_name.strip():
+    raise ValueError("Verified calendar timezone required")
+
+try:
+    calendar_timezone = ZoneInfo(timezone_name)
+except (ZoneInfoNotFoundError, ValueError) as exc:
+    raise ValueError("Invalid calendar timezone") from exc
+
+appointment_date = (
+    request.preferred_start
+    .astimezone(calendar_timezone)
+    .date()
+)
     try:
         snapshot = await providers.appointments(request.calendar_id)
         if snapshot.sync_verified is not True or snapshot.complete_all_calendars is not True:
             return _blocked('Appointment synchronization not verified')
         candidates = []
-        for groomer_id in snapshot.groomer_ids:
-            staff = await providers.staff(request.calendar_id, groomer_id,
-                                          request.customer_address)
+                for groomer_id in snapshot.groomer_ids:
+            staff = await providers.staff(
+                request.calendar_id,
+                groomer_id,
+                request.customer_address,
+                appointment_date,
+                timezone_name,
+            )
+
             if staff.approved is not True or staff.territory_verified is not True:
                 continue
             appointments = snapshot.appointments_by_groomer.get(groomer_id)
