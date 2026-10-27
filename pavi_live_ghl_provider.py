@@ -20,8 +20,8 @@ class IntegrationUnavailable(RuntimeError):
     pass
 
 
+
 class LiveGHLProviders:
-    
     def __init__(
         self,
         *,
@@ -40,9 +40,9 @@ class LiveGHLProviders:
         self.http_client = http_client
         self._snapshot = None
 
-
     @staticmethod
     def _calendar_ids():
+
         ids = [x.strip() for x in os.getenv('GHL_SCHEDULING_CALENDAR_IDS', '').split(',') if x.strip()]
         if len(ids) != 11 or len(set(ids)) != 11:
             raise IntegrationUnavailable('Complete 11-calendar inventory required')
