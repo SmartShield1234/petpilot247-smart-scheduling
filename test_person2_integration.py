@@ -341,5 +341,115 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
         )
 
 
+    async def test_dst_spring_forward_nonexistent_time_rejected(self):
+        zone = ZoneInfo(TEST_ZONE)
+
+        async def authority(*args):
+            return Staff(
+                approved=True,
+                territory_verified=True,
+                work_start=datetime(2026, 3, 8, 2, 30, tzinfo=zone),
+                work_end=datetime(2026, 3, 8, 5, 0, tzinfo=zone),
+                depot_address="Test Depot",
+                setup_minutes=10,
+                cleanup_minutes=10,
+                buffer_minutes=15,
+            )
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                date(2026, 3, 8),
+                TEST_ZONE,
+            )
+
+    async def test_dst_fall_back_ambiguous_time_rejected(self):
+        zone = ZoneInfo(TEST_ZONE)
+
+        async def authority(*args):
+            return Staff(
+                approved=True,
+                territory_verified=True,
+                work_start=datetime(2026, 11, 1, 1, 30, tzinfo=zone),
+                work_end=datetime(2026, 11, 1, 4, 0, tzinfo=zone),
+                depot_address="Test Depot",
+                setup_minutes=10,
+                cleanup_minutes=10,
+                buffer_minutes=15,
+            )
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                date(2026, 11, 1),
+                TEST_ZONE,
+            )
+
+    async def test_dst_reversed_utc_working_hours_rejected(self):
+        zone = ZoneInfo(TEST_ZONE)
+
+        async def authority(*args):
+            return Staff(
+                approved=True,
+                territory_verified=True,
+                work_start=datetime(
+                    2026, 11, 1, 1, 45, tzinfo=zone, fold=1
+                ),
+                work_end=datetime(
+                    2026, 11, 1, 1, 15, tzinfo=zone, fold=0
+                ),
+                depot_address="Test Depot",
+                setup_minutes=10,
+                cleanup_minutes=10,
+                buffer_minutes=15,
+            )
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        with self.assertRaises(IntegrationUnavailable):
+            await adapter.verify(
+                "calendar",
+                "groomer",
+                "address",
+                date(2026, 11, 1),
+                TEST_ZONE,
+            )
+
+    async def test_dst_transition_date_valid_hours_accepted(self):
+        zone = ZoneInfo(TEST_ZONE)
+
+        async def authority(*args):
+            return Staff(
+                approved=True,
+                territory_verified=True,
+                work_start=datetime(2026, 3, 8, 9, 0, tzinfo=zone),
+                work_end=datetime(2026, 3, 8, 17, 0, tzinfo=zone),
+                depot_address="Test Depot",
+                setup_minutes=10,
+                cleanup_minutes=10,
+                buffer_minutes=15,
+            )
+
+        adapter = GeographicEligibilityAdapter(authority)
+
+        staff = await adapter.verify(
+            "calendar",
+            "groomer",
+            "address",
+            date(2026, 3, 8),
+            TEST_ZONE,
+        )
+
+        self.assertTrue(staff.approved)
+        self.assertTrue(staff.territory_verified)
+
 if __name__ == "__main__":
     unittest.main()
