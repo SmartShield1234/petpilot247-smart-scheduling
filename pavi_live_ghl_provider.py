@@ -48,44 +48,50 @@ class LiveGHLProviders:
             raise IntegrationUnavailable('Complete 11-calendar inventory required')
         return ids
 
+
     async def appointments(self, calendar_id: str) -> Snapshot:
         if calendar_id not in self._calendar_ids():
-            raise IntegrationUnavailable('Calendar not configured')
+            raise IntegrationUnavailable("Calendar not configured")
+
         if self.snapshot_authority is None:
-            raise IntegrationUnavailable('Authenticated synchronization authority not configured')
-        # This authority must validate checkpoint/event completeness independently.
+            raise IntegrationUnavailable(
+                "Authenticated synchronization authority not configured"
+            )
+
         verified = await self.snapshot_authority()
         if verified is not True:
-            raise IntegrationUnavailable('Synchronization incomplete')
-       if self.appointment_snapshot_authority is None:
-    raise IntegrationUnavailable(
-        "Authenticated appointment snapshot authority not configured"
-    )
+            raise IntegrationUnavailable("Synchronization incomplete")
 
-snapshot = await self.appointment_snapshot_authority(calendar_id)
+        if self.appointment_snapshot_authority is None:
+            raise IntegrationUnavailable(
+                "Authenticated appointment snapshot authority not configured"
+            )
 
-if not isinstance(snapshot, Snapshot):
-    raise IntegrationUnavailable("Invalid appointment snapshot")
+        snapshot = await self.appointment_snapshot_authority(calendar_id)
 
-if (
-    snapshot.sync_verified is not True
-    or snapshot.complete_all_calendars is not True
-):
-    raise IntegrationUnavailable(
-        "Appointment snapshot verification incomplete"
-    )
+        if not isinstance(snapshot, Snapshot):
+            raise IntegrationUnavailable("Invalid appointment snapshot")
 
-if not snapshot.groomer_ids:
-    raise IntegrationUnavailable(
-        "Verified groomer inventory unavailable"
-    )
+        if (
+            snapshot.sync_verified is not True
+            or snapshot.complete_all_calendars is not True
+        ):
+            raise IntegrationUnavailable(
+                "Appointment snapshot verification incomplete"
+            )
 
-if set(snapshot.appointments_by_groomer) != set(snapshot.groomer_ids):
-    raise IntegrationUnavailable(
-        "Appointment-to-groomer coverage incomplete"
-    )
+        if not snapshot.groomer_ids:
+            raise IntegrationUnavailable(
+                "Verified groomer inventory unavailable"
+            )
 
-return snapshot
+        if set(snapshot.appointments_by_groomer) != set(snapshot.groomer_ids):
+            raise IntegrationUnavailable(
+                "Appointment-to-groomer coverage incomplete"
+            )
+
+        return snapshot
+
 
     async def staff(
     self,
