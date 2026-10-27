@@ -61,23 +61,25 @@ class Providers(Protocol):
 
 async def recommend(request: Request, providers: Providers) -> dict:
     """Fail closed: no verified evidence, no customer recommendations."""
+
     if not request.calendar_id.strip() or not request.customer_address.strip():
-        raise ValueError('Calendar and customer address required')
+        raise ValueError("Calendar and customer address required")
+
     if request.service_minutes <= 0 or not 1 <= request.max_results <= 5:
-        raise ValueError('Invalid service duration or result count')
+        raise ValueError("Invalid service duration or result count")
+
     if request.preferred_start.tzinfo is None:
-        raise ValueError('Timezone-aware preferred time required')
-        timezone_name = await providers.calendar_timezone(
-    request.calendar_id
-)
+        raise ValueError("Timezone-aware preferred time required")
 
-if not isinstance(timezone_name, str) or not timezone_name.strip():
-    raise ValueError("Verified calendar timezone required")
+    timezone_name = await providers.calendar_timezone(request.calendar_id)
 
-try:
-    calendar_timezone = ZoneInfo(timezone_name)
-except (ZoneInfoNotFoundError, ValueError) as exc:
-    raise ValueError("Invalid calendar timezone") from exc
+    if not isinstance(timezone_name, str) or not timezone_name.strip():
+        raise ValueError("Verified calendar timezone required")
+
+    try:
+        calendar_timezone = ZoneInfo(timezone_name)
+    except (ZoneInfoNotFoundError, ValueError) as exc:
+        raise ValueError("Invalid calendar timezone") from exc
 
     appointment_date = (
         request.preferred_start
