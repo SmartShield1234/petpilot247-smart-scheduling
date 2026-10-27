@@ -121,16 +121,18 @@ class LiveGHLProviders:
     if staff.approved is not True or staff.territory_verified is not True:
         raise IntegrationUnavailable("Staff authority not verified")
 
-    if (
-        staff.work_start.tzinfo is None
-        or staff.work_end.tzinfo is None
-        or staff.work_start.utcoffset() is None
-        or staff.work_end.utcoffset() is None
-        or staff.work_end <= staff.work_start
-    ):
-        raise IntegrationUnavailable("Invalid verified working hours")
+            if (
+            staff.work_start.tzinfo is None
+            or staff.work_end.tzinfo is None
+            or staff.work_start.utcoffset() is None
+            or staff.work_end.utcoffset() is None
+            or staff.work_end <= staff.work_start
+        ):
+            raise IntegrationUnavailable("Invalid verified working hours")
 
-    return staff
+        return staff
+
+    async def calendar_timezone(self, calendar_id: str) -> str:
 
 async def calendar_timezone(self, calendar_id: str) -> str:
     if calendar_id not in self._calendar_ids():
