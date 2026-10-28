@@ -1,0 +1,457 @@
+{
+  "schema_version": 1,
+  "source_status": "unverified",
+  "live_scheduling_authorized": false,
+  "groomers": [
+    {
+      "calendar_id": "mStTZCiFB42kzedTjWfO",
+      "ghl_user_id": "hNKJzX59QWSvc89d1dsr",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "mStTZCiFB42kzedTjWfO",
+      "ghl_user_id": "oPHf6c6jG8VjacvEdarB",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "mStTZCiFB42kzedTjWfO",
+      "ghl_user_id": "ZJfQ4KHsxKu5ltwGIMnw",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "SwW8f2Plp2e0iZdL8A7j",
+      "ghl_user_id": "UttgZsVwx5ZelfCtMoy2",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "SwW8f2Plp2e0iZdL8A7j",
+      "ghl_user_id": "hNKJzX59QWSvc89d1dsr",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "SwW8f2Plp2e0iZdL8A7j",
+      "ghl_user_id": "s1vrxJZo2xarfDJsvjda",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "SwW8f2Plp2e0iZdL8A7j",
+      "ghl_user_id": "ZJfQ4KHsxKu5ltwGIMnw",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "U6OROmHZOp7ILULsH18B",
+      "ghl_user_id": "hNKJzX59QWSvc89d1dsr",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "U6OROmHZOp7ILULsH18B",
+      "ghl_user_id": "UttgZsVwx5ZelfCtMoy2",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "U6OROmHZOp7ILULsH18B",
+      "ghl_user_id": "s1vrxJZo2xarfDJsvjda",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "U6OROmHZOp7ILULsH18B",
+      "ghl_user_id": "ZJfQ4KHsxKu5ltwGIMnw",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "XdmXwlbboWhDcrMcP0CF",
+      "ghl_user_id": "UttgZsVwx5ZelfCtMoy2",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "XdmXwlbboWhDcrMcP0CF",
+      "ghl_user_id": "hNKJzX59QWSvc89d1dsr",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "XdmXwlbboWhDcrMcP0CF",
+      "ghl_user_id": "s1vrxJZo2xarfDJsvjda",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    },
+    {
+      "calendar_id": "XdmXwlbboWhDcrMcP0CF",
+      "ghl_user_id": "ZJfQ4KHsxKu5ltwGIMnw",
+      "approved_for_mobile_grooming": false,
+      "geographic_eligibility_verified": false,
+      "service_territory": {
+        "type": "zip_codes",
+        "zip_codes": [],
+        "verified": false
+      },
+      "depot_address": null,
+      "working_schedule": {
+        "timezone": "America/New_York",
+        "days": [],
+        "start_time": null,
+        "end_time": null,
+        "verified": false
+      },
+      "scheduling_buffers": {
+        "setup_minutes": null,
+        "cleanup_minutes": null,
+        "buffer_minutes": null,
+        "verified": false
+      },
+      "verification": {
+        "source": null,
+        "reviewed_by": null,
+        "verified_at": null
+      }
+    }
+  ]
+}
