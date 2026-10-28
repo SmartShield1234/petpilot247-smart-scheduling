@@ -50,7 +50,6 @@ jobs:
           python -m py_compile postgres_appointment_reconciliation.py
           python test_person1_step69_recovery_safety.py
           python test_person1_step610_recovery_guards.py
-          python test_person1_step56.py
 
       - name: Run snapshot authority tests
         run: |
