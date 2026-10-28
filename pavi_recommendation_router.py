@@ -5,7 +5,8 @@ from datetime import datetime
 from fastapi import APIRouter, Header, HTTPException
 from pydantic import BaseModel, Field
 from pavi_recommendation_pipeline import Request, recommend
-from pavi_live_ghl_provider import LiveGHLProviders
+from pavi_provider_factory import build_live_providers
+from pavi_live_ghl_provider import IntegrationUnavailable
 
 router = APIRouter(prefix='/internal/pavi', tags=['Pavi Scheduling'])
 
@@ -24,13 +25,17 @@ async def internal_recommendations(payload: RecommendationInput,
         raise HTTPException(status_code=401, detail='Unauthorized')
     if payload.preferred_start.tzinfo is None:
         raise HTTPException(status_code=422, detail='preferred_start must include timezone')
+    try:
+        providers = build_live_providers()
+    except IntegrationUnavailable:
+        raise HTTPException(status_code=503, detail="Trusted scheduling authorities not configured")
     result = await recommend(Request(
         calendar_id=payload.calendar_id,
         customer_address=payload.customer_address,
         preferred_start=payload.preferred_start,
         service_minutes=payload.service_minutes,
         max_results=payload.max_results,
-    ), LiveGHLProviders())
+    ), providers)
     if 'reason' in result:
         raise HTTPException(status_code=503, detail=result['reason'])
     return result
