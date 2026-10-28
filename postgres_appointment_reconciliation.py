@@ -428,12 +428,12 @@ def apply_guarded_snapshot_recovery(
                         """,
                         (*new_values, *identity),
                     )
-                    cursor.execute(
-                        "DELETE FROM service_address_confirmations "
-                        "WHERE location_id = %s AND appointment_id = %s",
-                        identity,
-                    )
-                    updated += 1
+            cursor.execute(
+                "DELETE FROM service_address_confirmations "
+                "WHERE location_id = %s AND appointment_id = %s",
+                identity,
+            )
+            updated += 1
 
                 cursor.execute(
                     """
