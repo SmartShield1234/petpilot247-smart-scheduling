@@ -88,6 +88,8 @@ jobs:
 
       - name: Verify Step 3 authority factory
         run: python -m unittest -v test_person1_step3_authority_factory
+      - name: Verify Step 3 PostgreSQL synchronization gate
+        run: python -m unittest -v test_person1_step3_postgres_sync_authority
 
       - name: Verify Step 3 calendar timezone authority
         run: python -m unittest -v test_person1_step3_calendar_timezone
