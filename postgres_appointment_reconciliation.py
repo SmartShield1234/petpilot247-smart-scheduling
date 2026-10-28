@@ -392,17 +392,19 @@ def apply_guarded_snapshot_recovery(
                     if old[7]:
                         raise RuntimeError("Deleted appointment needs review")
 
-                    incoming_rev = revision(item["date_updated"])
-                    stored_rev = revision(old[6])
+            incoming_rev = revision(item["date_updated"])
+            stored_rev = revision(old[6])
 
-                    if incoming_rev < stored_rev:
-                        raise RuntimeError("GHL snapshot older than ledger")
-
-                    new_values = tuple(item.get(field) for field in (
-                        "calendar_id", "assigned_user_id", "contact_id",
-                        "appointment_status", "start_time", "end_time",
-                        "date_updated",
-                    ))
+            if incoming_rev < stored_rev:
+                raise RuntimeError(
+                    "GHL snapshot older than ledger; "
+                    f"revision_gap_seconds={(stored_rev - incoming_rev).total_seconds()}"
+                )
+            new_values = tuple(item.get(field) for field in (
+                "calendar_id", "assigned_user_id", "contact_id",
+                "appointment_status", "start_time", "end_time",
+                "date_updated",
+            ))
 
                     if incoming_rev == stored_rev:
                         if new_values != old[:7]:
