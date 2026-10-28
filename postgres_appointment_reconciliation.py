@@ -457,7 +457,6 @@ def apply_guarded_snapshot_recovery(
 
 
 
-
 async def recover_from_verified_ghl_snapshot(
     *,
     connection_url,
