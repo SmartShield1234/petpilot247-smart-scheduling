@@ -110,14 +110,8 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(staff.approved)
         self.assertTrue(staff.territory_verified)
-        self.assertEqual(
-            staff.work_start.date(),
-            TEST_DATE,
-        )
-        self.assertEqual(
-            staff.work_end.date(),
-            TEST_DATE,
-        )
+        self.assertEqual(staff.work_start.date(), TEST_DATE)
+        self.assertEqual(staff.work_end.date(), TEST_DATE)
 
     async def test_staff_bridge_integration(self):
         """Verify the five-argument Staff Bridge directly."""
@@ -254,7 +248,12 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result, 18.0)
 
     async def test_maps_failure_blocks_recommendations(self):
+        """A Maps failure must not produce bookable recommendations."""
+
         class FailingMapsProvider:
+
+            async def calendar_timezone(self, calendar_id):
+                return TEST_ZONE
 
             async def appointments(self, calendar_id):
                 return Snapshot(
@@ -262,7 +261,7 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
                     complete_all_calendars=True,
                     groomer_ids=("test-groomer",),
                     appointments_by_groomer={
-                        "test-groomer": ()
+                        "test-groomer": (),
                     },
                 )
 
@@ -271,25 +270,11 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 calendar_id,
                 groomer_id,
                 address,
+                appointment_date,
+                timezone_name,
             ):
-                start = datetime(
-                    2026,
-                    10,
-                    26,
-                    9,
-                    tzinfo=timezone.utc,
-                )
-
-                return Staff(
-                    approved=True,
-                    territory_verified=True,
-                    work_start=start,
-                    work_end=start + timedelta(hours=8),
-                    depot_address="Test Depot",
-                    setup_minutes=10,
-                    cleanup_minutes=10,
-                    buffer_minutes=15,
-                )
+                # Date-specific fictional staff evidence.
+                return test_staff(True)
 
             async def free_starts(
                 self,
@@ -340,7 +325,6 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
             "Verified upstream evidence unavailable",
         )
 
-
     async def test_dst_spring_forward_nonexistent_time_rejected(self):
         zone = ZoneInfo(TEST_ZONE)
 
@@ -348,8 +332,12 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
             return Staff(
                 approved=True,
                 territory_verified=True,
-                work_start=datetime(2026, 3, 8, 2, 30, tzinfo=zone),
-                work_end=datetime(2026, 3, 8, 5, 0, tzinfo=zone),
+                work_start=datetime(
+                    2026, 3, 8, 2, 30, tzinfo=zone
+                ),
+                work_end=datetime(
+                    2026, 3, 8, 5, 0, tzinfo=zone
+                ),
                 depot_address="Test Depot",
                 setup_minutes=10,
                 cleanup_minutes=10,
@@ -374,8 +362,12 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
             return Staff(
                 approved=True,
                 territory_verified=True,
-                work_start=datetime(2026, 11, 1, 1, 30, tzinfo=zone),
-                work_end=datetime(2026, 11, 1, 4, 0, tzinfo=zone),
+                work_start=datetime(
+                    2026, 11, 1, 1, 30, tzinfo=zone
+                ),
+                work_end=datetime(
+                    2026, 11, 1, 4, 0, tzinfo=zone
+                ),
                 depot_address="Test Depot",
                 setup_minutes=10,
                 cleanup_minutes=10,
@@ -401,10 +393,14 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 approved=True,
                 territory_verified=True,
                 work_start=datetime(
-                    2026, 11, 1, 1, 45, tzinfo=zone, fold=1
+                    2026, 11, 1, 1, 45,
+                    tzinfo=zone,
+                    fold=1,
                 ),
                 work_end=datetime(
-                    2026, 11, 1, 1, 15, tzinfo=zone, fold=0
+                    2026, 11, 1, 1, 15,
+                    tzinfo=zone,
+                    fold=0,
                 ),
                 depot_address="Test Depot",
                 setup_minutes=10,
@@ -430,8 +426,12 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
             return Staff(
                 approved=True,
                 territory_verified=True,
-                work_start=datetime(2026, 3, 8, 9, 0, tzinfo=zone),
-                work_end=datetime(2026, 3, 8, 17, 0, tzinfo=zone),
+                work_start=datetime(
+                    2026, 3, 8, 9, 0, tzinfo=zone
+                ),
+                work_end=datetime(
+                    2026, 3, 8, 17, 0, tzinfo=zone
+                ),
                 depot_address="Test Depot",
                 setup_minutes=10,
                 cleanup_minutes=10,
@@ -450,6 +450,7 @@ class Person2IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(staff.approved)
         self.assertTrue(staff.territory_verified)
+
 
 if __name__ == "__main__":
     unittest.main()
