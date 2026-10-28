@@ -9,6 +9,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 from pavi_recommendation_router import router as pavi_router
 
 from petpilot247_ghl_oauth import router as oauth_router
+from petpilot247_ghl_oauth import initialize_oauth_tables
 
 from petpilot247_demo_app import app as demo_app
 from ghl_webhook_receiver import prepare_verified_appointment_event
@@ -51,7 +52,7 @@ async def lifespan(app: FastAPI):
                 raise RuntimeError(
                     "Synchronization metadata not initialized"
                 )
-
+    initialize_oauth_tables(connection_url=url)
     yield
 
 

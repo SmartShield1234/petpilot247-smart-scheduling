@@ -20,50 +20,164 @@ class IntegrationUnavailable(RuntimeError):
     pass
 
 
+
 class LiveGHLProviders:
-    def __init__(self, *, snapshot_authority=None, staff_authority=None,
-                 routes=None, http_client=None):
-        # Authorities must be server-controlled functions or authenticated
-        # service clients. Do not expose their inputs as request parameters.
+    def __init__(
+        self,
+        *,
+        snapshot_authority=None,
+        appointment_snapshot_authority=None,
+        staff_authority=None,
+        calendar_timezone_authority=None,
+        routes=None,
+        http_client=None,
+    ):
         self.snapshot_authority = snapshot_authority
+        self.appointment_snapshot_authority = appointment_snapshot_authority
         self.staff_authority = staff_authority
+        self.calendar_timezone_authority = calendar_timezone_authority
         self.routes = routes or self._google_route
         self.http_client = http_client
         self._snapshot = None
 
     @staticmethod
     def _calendar_ids():
+
         ids = [x.strip() for x in os.getenv('GHL_SCHEDULING_CALENDAR_IDS', '').split(',') if x.strip()]
         if len(ids) != 11 or len(set(ids)) != 11:
             raise IntegrationUnavailable('Complete 11-calendar inventory required')
         return ids
 
+
     async def appointments(self, calendar_id: str) -> Snapshot:
         if calendar_id not in self._calendar_ids():
-            raise IntegrationUnavailable('Calendar not configured')
+            raise IntegrationUnavailable("Calendar not configured")
+
         if self.snapshot_authority is None:
-            raise IntegrationUnavailable('Authenticated synchronization authority not configured')
-        # This authority must validate checkpoint/event completeness independently.
+            raise IntegrationUnavailable(
+                "Authenticated synchronization authority not configured"
+            )
+
         verified = await self.snapshot_authority()
         if verified is not True:
-            raise IntegrationUnavailable('Synchronization incomplete')
-        raise IntegrationUnavailable('Authenticated appointment-to-groomer mapping not yet installed')
+            raise IntegrationUnavailable("Synchronization incomplete")
 
-    async def staff(self, calendar_id: str, groomer_id: str, address: str) -> Staff:
+        if self.appointment_snapshot_authority is None:
+            raise IntegrationUnavailable(
+                "Authenticated appointment snapshot authority not configured"
+            )
+
+        snapshot = await self.appointment_snapshot_authority(calendar_id)
+
+        if not isinstance(snapshot, Snapshot):
+            raise IntegrationUnavailable("Invalid appointment snapshot")
+
+        if (
+            snapshot.sync_verified is not True
+            or snapshot.complete_all_calendars is not True
+        ):
+            raise IntegrationUnavailable(
+                "Appointment snapshot verification incomplete"
+            )
+
+        if not snapshot.groomer_ids:
+            raise IntegrationUnavailable(
+                "Verified groomer inventory unavailable"
+            )
+
+        if set(snapshot.appointments_by_groomer) != set(snapshot.groomer_ids):
+            raise IntegrationUnavailable(
+                "Appointment-to-groomer coverage incomplete"
+            )
+
+        return snapshot
+
+
+   
+
+    async def staff(
+        self,
+        calendar_id: str,
+        groomer_id: str,
+        address: str,
+        appointment_date,
+        timezone_name: str,
+    ) -> Staff:
         if self.staff_authority is None:
-            raise IntegrationUnavailable('Authoritative groomer territory service unavailable')
-        staff = await self.staff_authority(calendar_id, groomer_id, address)
+            raise IntegrationUnavailable(
+                "Authoritative groomer territory service unavailable"
+            )
+
+        staff = await self.staff_authority(
+            calendar_id,
+            groomer_id,
+            address,
+            appointment_date,
+            timezone_name,
+        )
+
         if not isinstance(staff, Staff):
-            raise IntegrationUnavailable('Invalid staff evidence')
+            raise IntegrationUnavailable("Invalid staff evidence")
+
+        if staff.approved is not True or staff.territory_verified is not True:
+            raise IntegrationUnavailable("Staff authority not verified")
+
+        if (
+            staff.work_start.tzinfo is None
+            or staff.work_end.tzinfo is None
+            or staff.work_start.utcoffset() is None
+            or staff.work_end.utcoffset() is None
+            or staff.work_end <= staff.work_start
+        ):
+            raise IntegrationUnavailable("Invalid verified working hours")
+
         return staff
 
-    async def free_starts(self, calendar_id: str, groomer_id: str,
-                          preferred: datetime) -> frozenset[datetime]:
+
+
+    async def calendar_timezone(self, calendar_id: str) -> str:
         if calendar_id not in self._calendar_ids():
-            raise IntegrationUnavailable('Calendar not configured')
+            raise IntegrationUnavailable("Calendar not configured")
+
+        if self.calendar_timezone_authority is None:
+            raise IntegrationUnavailable(
+                "Authenticated calendar timezone authority not configured"
+            )
+
+        timezone_name = await self.calendar_timezone_authority(calendar_id)
+
+        from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+        if not isinstance(timezone_name, str) or not timezone_name.strip():
+            raise IntegrationUnavailable(
+                "Verified calendar timezone unavailable"
+            )
+
+        try:
+            ZoneInfo(timezone_name)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise IntegrationUnavailable(
+                "Invalid calendar timezone"
+            ) from exc
+
+        return timezone_name
+
+
+    async def free_starts(
+        self,
+        calendar_id: str,
+        groomer_id: str,
+        preferred: datetime,
+    ) -> frozenset[datetime]:
+        timezone_name = await self.calendar_timezone(calendar_id)
+
+        if calendar_id not in self._calendar_ids():
+            raise IntegrationUnavailable("Calendar not configured")
+
         if preferred.tzinfo is None:
-            raise IntegrationUnavailable('Timezone-aware time required')
-        token = os.getenv('GHL_API_TOKEN', '').strip()
+            raise IntegrationUnavailable("Timezone-aware time required")
+
+        token = os.getenv("GHL_API_TOKEN", "").strip()
         if not token:
             raise IntegrationUnavailable('GHL token missing')
         start = preferred.astimezone(timezone.utc) - timedelta(hours=12)
@@ -73,7 +187,7 @@ class LiveGHLProviders:
                    'Accept': 'application/json'}
         params = {'startDate': int(start.timestamp()*1000),
                   'endDate': int(end.timestamp()*1000),
-                  'timezone': 'America/New_York', 'userId': groomer_id}
+                  'timeZone': timezone_name, 'userId': groomer_id}
         async def fetch(client):
             response = await client.get(
                 f'https://services.leadconnectorhq.com/calendars/{calendar_id}/free-slots',

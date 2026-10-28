@@ -111,7 +111,14 @@ async def get_ghl_appointments(
     all_events = []
     checked_calendar_ids = []
 
-    async with httpx.AsyncClient(timeout=20) as client:
+    async with httpx.AsyncClient(
+    timeout=httpx.Timeout(
+        connect=10.0,
+        read=45.0,
+        write=10.0,
+        pool=10.0,
+    )
+) as client:
         for current_calendar_id in scheduling_calendar_ids:
             params = {
                 "locationId": location_id,

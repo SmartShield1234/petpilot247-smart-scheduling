@@ -163,6 +163,8 @@ class TestGeographicStaffBridge(unittest.TestCase):
                     "TEST_CALENDAR",
                     "TEST_GROOMER",
                     "123 Test Street, PA 19006",
+                    date(2026, 10, 27),
+                    "America/New_York",
                 )
             )
 
