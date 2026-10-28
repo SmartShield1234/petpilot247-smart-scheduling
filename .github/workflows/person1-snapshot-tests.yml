@@ -10,10 +10,11 @@ on:
       - "pavi_live_ghl_provider.py"
       - "pavi_recommendation_pipeline.py"
       - "postgres_appointment_reconciliation.py"
+      - "postgres_appointment_events.py"
       - "requirements.txt"
       - ".github/workflows/person1-snapshot-tests.yml"
       - "test_person1_reconciliation_regression.py"
-        - "test_person1_postgres_real_transactions.py"
+      - "test_person1_postgres_real_transactions.py"
 
   workflow_dispatch:
 
