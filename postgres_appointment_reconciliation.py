@@ -435,7 +435,7 @@ def apply_guarded_snapshot_recovery(
             )
             updated += 1
 
-                cursor.execute(
+               cursor.execute(
                     """
                     UPDATE appointment_sync_health
                     SET status = 'uncertain',
