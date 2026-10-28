@@ -93,3 +93,6 @@ jobs:
 
       - name: Verify Step 3 calendar timezone authority
         run: python -m unittest -v test_person1_step3_calendar_timezone
+
+      - name: Validate Step 3 PostgreSQL snapshot reader
+        run: python -m unittest -v test_person1_step3_snapshot_reader
