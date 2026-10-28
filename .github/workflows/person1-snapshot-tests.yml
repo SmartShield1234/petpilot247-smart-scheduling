@@ -81,4 +81,7 @@ jobs:
           PETPILOT_DB_INTEGRATION_TEST: "1"
           PETPILOT_TEST_DATABASE_URL: "postgresql://petpilot_test:petpilot_test_only@127.0.0.1:5432/petpilot_reconciliation_test"
         run: |
-          python -m unittest test_person1_postgres_real_transactions -v   
+          python -m unittest test_person1_postgres_real_transactions -v 
+      - name: Verify Person 1 Step 3 provider wiring
+        run: |
+          python -m unittest -v test_person1_step3_wiring
