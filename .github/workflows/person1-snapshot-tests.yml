@@ -46,6 +46,7 @@ jobs:
           python -m py_compile pavi_live_ghl_provider.py
           python -m py_compile pavi_recommendation_pipeline.py
           python -m py_compile test_person1_snapshot_authority.py
+          python -m py_compile postgres_appointment_reconciliation.py
 
       - name: Run snapshot authority tests
         run: |
