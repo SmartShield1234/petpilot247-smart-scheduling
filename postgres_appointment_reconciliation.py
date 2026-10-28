@@ -400,19 +400,20 @@ def apply_guarded_snapshot_recovery(
                     "GHL snapshot older than ledger; "
                     f"revision_gap_seconds={(stored_rev - incoming_rev).total_seconds()}"
                 )
+
             new_values = tuple(item.get(field) for field in (
                 "calendar_id", "assigned_user_id", "contact_id",
                 "appointment_status", "start_time", "end_time",
                 "date_updated",
             ))
 
-                    if incoming_rev == stored_rev:
-                        if new_values != old[:7]:
-                            raise RuntimeError("Conflicting same-revision data")
-                        identical += 1
-                        continue
+            if incoming_rev == stored_rev:
+                if new_values != old[:7]:
+                    raise RuntimeError("Conflicting same-revision data")
+                identical += 1
+                continue
 
-                    cursor.execute(
+            cursor.execute(
                         """
                         UPDATE appointments
                         SET calendar_id = %s,
