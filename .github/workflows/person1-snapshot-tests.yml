@@ -9,6 +9,7 @@ on:
       - "test_person1_snapshot_authority.py"
       - "pavi_live_ghl_provider.py"
       - "pavi_recommendation_pipeline.py"
+      - "postgres_appointment_reconciliation.py"
       - "requirements.txt"
       - ".github/workflows/person1-snapshot-tests.yml"
 
