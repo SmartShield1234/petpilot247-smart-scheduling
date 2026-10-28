@@ -1,0 +1,60 @@
+
+name: Person 2 Geographic and Integration Tests
+
+on:
+  push:
+    branches:
+      - person2-integration-check
+  pull_request:
+    branches:
+      - pavi-scheduling-development-handoff
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  person2-tests:
+    name: Verify Person 2 Geographic and Scheduling Integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      PETPILOT_LIVE_BOOKING_ENABLED: "false"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Check Python syntax
+        run: |
+          python -m compileall -q \
+            geographic_eligibility_adapter.py \
+            geographic_eligibility_router.py \
+            geographic_staff_bridge.py \
+            pavi_live_ghl_provider.py \
+            pavi_recommendation_pipeline.py
+
+      - name: Run geographic tests
+        run: |
+          python -m unittest discover \
+            -p "test_geographic*.py" -v
+
+      - name: Run Person 2 integration and scheduling tests
+        run: |
+          python -m unittest \
+            test_person2_integration \
+            test_person2_scheduling -v
