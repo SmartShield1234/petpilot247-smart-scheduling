@@ -12,6 +12,7 @@ on:
       - "postgres_appointment_reconciliation.py"
       - "requirements.txt"
       - ".github/workflows/person1-snapshot-tests.yml"
+      - "test_person1_reconciliation_regression.py"
 
   workflow_dispatch:
 
@@ -54,3 +55,7 @@ jobs:
       - name: Run snapshot authority tests
         run: |
           python test_person1_snapshot_authority.py
+
+      - name: Run reconciliation regression tests
+        run: |
+          python -m unittest test_person1_reconciliation_regression -v  
