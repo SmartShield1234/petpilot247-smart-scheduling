@@ -1,5 +1,4 @@
-@'
-"""PetPilot247 Step 3D verified snapshot assembly."""
+﻿"""PetPilot247 Step 3D verified snapshot assembly."""
 
 from collections.abc import Mapping
 from pavi_recommendation_pipeline import Snapshot
@@ -127,4 +126,3 @@ def assemble_verified_snapshot(
             for groomer, appointments in grouped.items()
         },
     )
-'@ | Set-Content -LiteralPath .\pavi_step3_snapshot_adapter.py -Encoding UTF8
