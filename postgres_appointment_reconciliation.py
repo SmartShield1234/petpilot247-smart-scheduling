@@ -1,10 +1,8 @@
 
-
 """PetPilot247 PostgreSQL appointment reconciliation.
 
-Development-safe comparison only.
-No automatic synchronization approval.
-No appointment creation or modification.
+Development-safe comparison and guarded insert-only recovery.
+No automatic synchronization approval or live booking authorization.
 """
 
 import os
@@ -312,8 +310,7 @@ def apply_guarded_snapshot_recovery(
         prepared[identity] = item
 
     inserted = 0
-    updated = 0
-    identical = 0
+    existing_records_skipped = 0
 
     with psycopg.connect(
         connection_url, sslmode="require", connect_timeout=15
@@ -361,80 +358,27 @@ def apply_guarded_snapshot_recovery(
                     )
                     existing = cursor.fetchone()
 
-                    if existing is None:
-                        values = [
-                            item.get(field)
-                            if field not in ("is_deleted", "source")
-                            else (0 if field == "is_deleted"
-                                  else "api_reconciliation")
-                            for field in columns
-                        ]
-                        cursor.execute(
-                            sql.SQL("INSERT INTO appointments ({}) VALUES ({})").format(
-                                sql.SQL(", ").join(map(sql.Identifier, columns)),
-                                sql.SQL(", ").join(
-                                    sql.Placeholder() for _ in columns
-                                ),
+                    if existing is not None:
+                        # Insert-only: never overwrite or delete existing records.
+                        existing_records_skipped += 1
+                        continue
+
+                    values = [
+                        item.get(field)
+                        if field not in ("is_deleted", "source")
+                        else (0 if field == "is_deleted" else "api_reconciliation")
+                        for field in columns
+                    ]
+                    cursor.execute(
+                        sql.SQL("INSERT INTO appointments ({}) VALUES ({})").format(
+                            sql.SQL(", ").join(map(sql.Identifier, columns)),
+                            sql.SQL(", ").join(
+                                sql.Placeholder() for _ in columns
                             ),
-                            values,
-                        )
-                        inserted += 1
-                        continue
-
-                    cursor.execute(
-                        "SELECT calendar_id, assigned_user_id, contact_id, "
-                        "appointment_status, start_time, end_time, "
-                        "date_updated, is_deleted "
-                        "FROM appointments "
-                        "WHERE location_id = %s AND appointment_id = %s",
-                        identity,
+                        ),
+                        values,
                     )
-                    old = cursor.fetchone()
-                    if old[7]:
-                        raise RuntimeError("Deleted appointment needs review")
-
-                    incoming_rev = revision(item["date_updated"])
-                    stored_rev = revision(old[6])
-
-                    if incoming_rev < stored_rev:
-                        raise RuntimeError(
-                            "GHL snapshot older than ledger; "
-                            f"revision_gap_seconds={(stored_rev - incoming_rev).total_seconds()}"
-                        )
-
-                    new_values = tuple(item.get(field) for field in (
-                        "calendar_id", "assigned_user_id", "contact_id",
-                        "appointment_status", "start_time", "end_time",
-                        "date_updated",
-                    ))
-
-                    if incoming_rev == stored_rev:
-                        if new_values != old[:7]:
-                            raise RuntimeError("Conflicting same-revision data")
-                        identical += 1
-                        continue
-
-                    cursor.execute(
-                        """
-                        UPDATE appointments
-                        SET calendar_id = %s,
-                            assigned_user_id = %s,
-                            contact_id = %s,
-                            appointment_status = %s,
-                            start_time = %s,
-                            end_time = %s,
-                            date_updated = %s,
-                            source = 'api_reconciliation'
-                        WHERE location_id = %s AND appointment_id = %s
-                        """,
-                        (*new_values, *identity),
-                    )
-                    cursor.execute(
-                        "DELETE FROM service_address_confirmations "
-                        "WHERE location_id = %s AND appointment_id = %s",
-                        identity,
-                    )
-                    updated += 1
+                    inserted += 1
 
                 cursor.execute(
                     """
@@ -450,12 +394,13 @@ def apply_guarded_snapshot_recovery(
 
     return {
         "inserted": inserted,
-        "updated": updated,
-        "identical": identical,
+        "updated": 0,
+        "identical": 0,
+        "newer_revisions_preserved": 0,
+        "existing_records_skipped": existing_records_skipped,
         "synchronization_verified": False,
         "booking_authorized": False,
     }
-
 
 
 async def recover_from_verified_ghl_snapshot(
