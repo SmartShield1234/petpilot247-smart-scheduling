@@ -202,58 +202,65 @@ class GuardedRecoveryTests(unittest.TestCase):
     def existing(snap):
         return {(snap["location_id"], snap["appointment_id"]): {**snap, "is_deleted": 0}}
 
-    def test_older_snapshot_rejected_without_writing(self):
+
+    def test_older_snapshot_skipped_without_writing(self):
         current = snapshot("appointment-a", "2026-11-04T12:00:00+00:00")
         older = snapshot("appointment-a", "2026-11-04T11:00:00+00:00")
         conn = FakeConnection(self.existing(current))
-        with self.assertRaisesRegex(RuntimeError, "GHL snapshot older than ledger"):
-            self.run_recovery(conn, [older])
-        self.assertEqual(conn.persisted[("test-location", "appointment-a")], {**current, "is_deleted": 0})
-        self.assertEqual(conn.rollbacks, 1)
-        self.assertEqual(conn.commits, 0)
+        result = self.run_recovery(conn, [older])
+        self.assertEqual(result["existing_records_skipped"], 1)
+        self.assertEqual(result["updated"], 0)
+        self.assertEqual(conn.persisted[("test-location", "appointment-a")],
+                         {**current, "is_deleted": 0})
+        self.assertFalse(result["booking_authorized"])
 
-    def test_same_revision_conflicting_data_rejected(self):
+    def test_same_revision_conflicting_data_is_not_overwritten(self):
         original = snapshot("appointment-a", "2026-11-04T12:00:00+00:00")
-        changed = snapshot("appointment-a", "2026-11-04T12:00:00+00:00", appointment_status="cancelled")
+        changed = snapshot("appointment-a", "2026-11-04T12:00:00+00:00",
+                           appointment_status="cancelled")
         conn = FakeConnection(self.existing(original))
-        with self.assertRaisesRegex(RuntimeError, "Conflicting same-revision data"):
-            self.run_recovery(conn, [changed])
-        self.assertEqual(conn.commits, 0)
-        self.assertEqual(conn.persisted[("test-location", "appointment-a")]["appointment_status"], "confirmed")
+        result = self.run_recovery(conn, [changed])
+        self.assertEqual(result["existing_records_skipped"], 1)
+        self.assertEqual(conn.persisted[("test-location", "appointment-a")]
+                         ["appointment_status"], "confirmed")
+        self.assertFalse(result["synchronization_verified"])
 
-    def test_identical_snapshot_is_safe_and_booking_stays_off(self):
+    def test_identical_snapshot_is_skipped_and_booking_stays_off(self):
         original = snapshot("appointment-a", "2026-11-04T12:00:00+00:00")
         conn = FakeConnection(self.existing(original))
         result = self.run_recovery(conn, [original])
-        self.assertEqual(result["identical"], 1)
+        self.assertEqual(result["existing_records_skipped"], 1)
+        self.assertEqual(result["identical"], 0)
         self.assertEqual(result["updated"], 0)
-        self.assertIs(result["synchronization_verified"], False)
-        self.assertIs(result["booking_authorized"], False)
-        self.assertEqual(conn.commits, 1)
+        self.assertFalse(result["synchronization_verified"])
+        self.assertFalse(result["booking_authorized"])
 
-    def test_newer_snapshot_updates_but_never_authorizes_booking(self):
+    def test_newer_snapshot_does_not_overwrite_existing_record(self):
         old = snapshot("appointment-a", "2026-11-04T11:00:00+00:00")
-        new = snapshot("appointment-a", "2026-11-04T12:00:00+00:00", appointment_status="rescheduled")
+        new = snapshot("appointment-a", "2026-11-04T12:00:00+00:00",
+                       appointment_status="rescheduled")
         conn = FakeConnection(self.existing(old))
         result = self.run_recovery(conn, [new])
-        self.assertEqual(result["updated"], 1)
-        self.assertEqual(conn.persisted[("test-location", "appointment-a")]["appointment_status"], "rescheduled")
+        self.assertEqual(result["updated"], 0)
+        self.assertEqual(result["existing_records_skipped"], 1)
+        self.assertEqual(conn.persisted[("test-location", "appointment-a")]
+                         ["appointment_status"], "confirmed")
         self.assertFalse(result["booking_authorized"])
-        self.assertFalse(result["synchronization_verified"])
 
-    def test_transaction_rolls_back_prior_update_if_later_snapshot_is_stale(self):
+    def test_multiple_existing_records_are_skipped_without_updates(self):
         old_a = snapshot("appointment-a", "2026-11-04T11:00:00+00:00")
-        newer_a = snapshot("appointment-a", "2026-11-04T12:00:00+00:00", appointment_status="rescheduled")
+        newer_a = snapshot("appointment-a", "2026-11-04T12:00:00+00:00",
+                           appointment_status="rescheduled")
         current_b = snapshot("appointment-b", "2026-11-04T12:00:00+00:00")
         older_b = snapshot("appointment-b", "2026-11-04T11:00:00+00:00")
         records = {**self.existing(old_a), **self.existing(current_b)}
         conn = FakeConnection(records)
-        with self.assertRaisesRegex(RuntimeError, "GHL snapshot older than ledger"):
-            self.run_recovery(conn, [newer_a, older_b])
-        self.assertGreaterEqual(conn.updates, 1)
-        self.assertEqual(conn.commits, 0)
-        self.assertEqual(conn.rollbacks, 1)
+        result = self.run_recovery(conn, [newer_a, older_b])
+        self.assertEqual(result["existing_records_skipped"], 2)
+        self.assertEqual(result["updated"], 0)
         self.assertEqual(conn.persisted, records)
+        self.assertFalse(result["synchronization_verified"])
+        self.assertFalse(result["booking_authorized"])
 
 
 if __name__ == "__main__":
