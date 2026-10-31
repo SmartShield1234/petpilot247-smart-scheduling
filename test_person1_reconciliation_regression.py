@@ -77,7 +77,17 @@ class FakeCursor:
         elif "update appointment_sync_health" in text:
             self.conn.health = "uncertain"
         elif "insert into appointments" in text:
-            raise AssertionError("Test fixture expects pre-existing appointment records")
+            columns = (
+                "location_id", "appointment_id", "calendar_id",
+                "assigned_user_id", "contact_id", "appointment_status",
+                "start_time", "end_time", "date_updated", "is_deleted", "source",
+            )
+            row = dict(zip(columns, params))
+            identity = (row["location_id"], row["appointment_id"])
+            if identity in self.conn.pending:
+                raise AssertionError("Duplicate insert")
+            self.conn.pending[identity] = row
+            self.conn.inserts += 1
         else:
             raise AssertionError(f"Unexpected SQL in offline fake: {str(query)[:100]}")
         return self
@@ -91,6 +101,7 @@ class FakeConnection:
         self.persisted = copy.deepcopy(rows)
         self.pending = None
         self.health = "uncertain"
+        self.inserts = 0
         self.updates = 0
         self.deletes = 0
         self.commits = 0
@@ -130,7 +141,25 @@ def load_source():
         "ghl_historical_snapshot_adapter": types.ModuleType("ghl_historical_snapshot_adapter"),
         "postgres_appointment_events": types.ModuleType("postgres_appointment_events"),
     }
-    package_stubs["psycopg"].sql = package_stubs["psycopg.sql"]
+    class FakeSQL:
+        def __init__(self, value):
+            self.value = str(value)
+
+        def __str__(self):
+            return self.value
+
+        def format(self, *args):
+            return FakeSQL(self.value.format(*(str(a) for a in args)))
+
+        def join(self, items):
+            return FakeSQL(self.value.join(str(x) for x in items))
+
+    sql_stub = package_stubs["psycopg.sql"]
+    sql_stub.SQL = FakeSQL
+    sql_stub.Identifier = lambda name: FakeSQL(name)
+    sql_stub.Placeholder = lambda: FakeSQL("%s")
+
+    package_stubs["psycopg"].sql = sql_stub
     package_stubs["psycopg"].connect = lambda *args, **kwargs: None
     package_stubs["ghl_service"].get_ghl_appointments = lambda **kw: None
     package_stubs["ghl_historical_snapshot_adapter"].map_ghl_historical_snapshot = lambda event: event
