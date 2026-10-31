@@ -151,6 +151,15 @@ async def get_ghl_appointments(
                     "Missing or invalid GHL events list"
                 )
 
+            if (
+                data.get("hasMore") is True
+                or data.get("nextPage")
+                or data.get("nextCursor")
+            ):
+                raise RuntimeError(
+                    "GHL appointment response indicates additional results"
+                )
+
             all_events.extend(events)
             checked_calendar_ids.append(current_calendar_id)
 
