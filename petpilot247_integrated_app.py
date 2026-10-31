@@ -8,6 +8,7 @@ from fastapi import FastAPI, Header, HTTPException, Request
 
 from pavi_recommendation_router import router as pavi_router
 from geographic_eligibility_router import router as geographic_router
+from person2_dashboard_router import router as person2_dashboard_router
 
 from petpilot247_ghl_oauth import router as oauth_router
 from petpilot247_ghl_oauth import initialize_oauth_tables
@@ -65,6 +66,7 @@ app = FastAPI(
 
 app.include_router(pavi_router)
 app.include_router(geographic_router)
+app.include_router(person2_dashboard_router)
 app.include_router(oauth_router)
 
 
